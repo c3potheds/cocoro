@@ -1,8 +1,10 @@
-use crate::Coro;
-use crate::Suspended;
+use crate::coro::Coro;
+use crate::suspended::Suspended;
+use crate::suspended::SuspendedVisitor;
 
 // Private struct to make Void uninstantiable outside this module. Do not
-// instantiate this struct.
+// instantiate this struct. Do not derive any traits like `Default` or `Clone`.
+#[derive(Debug, PartialEq, Eq)]
 struct Uninstantiable;
 
 /// A stand-in for the 'never' type `!`, which can be used as the `Next` type
@@ -10,10 +12,23 @@ struct Uninstantiable;
 ///
 /// This type cannot be instantiated, so it is impossible to `Yield` from a
 /// coroutine whose `Next` type is `Void`.
+#[derive(Debug, PartialEq, Eq)]
 pub struct Void(Uninstantiable);
+
+impl<T, R, I> Suspended<T, R, I> for Void {
+    type Next = Void;
+    fn visit<X>(
+        self,
+        _: impl SuspendedVisitor<T, R, I, Self::Next, Out = X>,
+    ) -> X {
+        unreachable!()
+    }
+}
+
 impl<Y, R, I> Coro<Y, R, I> for Void {
     type Next = Void;
-    fn resume(self, _: I) -> Suspended<Y, R, Self> {
+    type Suspend = Void;
+    fn resume(self, _: I) -> Self::Suspend {
         unreachable!()
     }
 }

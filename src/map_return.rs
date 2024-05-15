@@ -1,11 +1,13 @@
-use crate::Coro;
-use crate::Suspended;
-use Suspended::*;
+use crate::coro::Coro;
+use crate::suspend::Suspend;
+use crate::suspended::Suspended;
+use core::marker::PhantomData;
+use Suspend::*;
 
 pub struct MapReturn<R, K, F> {
     coro: K,
     f: F,
-    _phantom: std::marker::PhantomData<R>,
+    _phantom: PhantomData<R>,
 }
 
 impl<R, K, F> MapReturn<R, K, F> {
@@ -17,7 +19,7 @@ impl<R, K, F> MapReturn<R, K, F> {
         MapReturn {
             coro,
             f,
-            _phantom: std::marker::PhantomData,
+            _phantom: PhantomData,
         }
     }
 }
@@ -28,10 +30,10 @@ where
     F: FnOnce(R) -> R2,
 {
     type Next = MapReturn<R, K::Next, F>;
-
-    fn resume(self, input: I) -> Suspended<Y, R2, Self::Next> {
+    type Suspend = Suspend<Y, R2, Self::Next>;
+    fn resume(self, input: I) -> Self::Suspend {
         let Self { coro, f, .. } = self;
-        match coro.resume(input) {
+        match coro.resume(input).into_enum() {
             Yield(y, next) => Yield(y, MapReturn::new(next, f)),
             Return(r) => Return(f(r)),
         }

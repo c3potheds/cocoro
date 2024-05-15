@@ -1,17 +1,36 @@
-use super::coro::Coro;
-use super::suspended::Suspended;
-use super::void::Void;
-use Suspended::Return;
+use crate::coro::Coro;
+use crate::suspended::Suspended;
+use crate::suspended::SuspendedVisitor;
+use crate::void::Void;
 
 /// A coroutine that just returns a value.
 ///
 /// See [`just_return`](fn.just_return.html).
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct JustReturn<T>(T);
+
+/// An implementation of `Suspended` that wraps a return value.
+///
+/// A coroutine that uses this struct as its `Suspend` associated type will be
+/// known at compile time to always return, and never yield.
+pub struct Returned<T>(pub T);
+
+impl<Y, R, I> Suspended<Y, R, I> for Returned<R> {
+    type Next = Void;
+    fn visit<X>(
+        self,
+        visitor: impl SuspendedVisitor<Y, R, I, Void, Out = X>,
+    ) -> X {
+        visitor.on_return(self.0)
+    }
+}
+
 impl<Y, T, I> Coro<Y, T, I> for JustReturn<T> {
     type Next = Void;
-    fn resume(self, _: I) -> Suspended<Y, T, Self::Next> {
-        Return(self.0)
+    type Suspend = Returned<T>;
+
+    fn resume(self, _: I) -> Self::Suspend {
+        Returned(self.0)
     }
 }
 

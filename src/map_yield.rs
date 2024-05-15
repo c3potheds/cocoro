@@ -1,11 +1,13 @@
-use crate::Coro;
-use crate::Suspended;
-use Suspended::*;
+use crate::coro::Coro;
+use crate::suspend::Suspend;
+use crate::suspended::Suspended;
+use core::marker::PhantomData;
+use Suspend::*;
 
 pub struct MapYield<Y, K, F> {
     coro: K,
     f: F,
-    _phantom: std::marker::PhantomData<Y>,
+    _phantom: PhantomData<Y>,
 }
 
 impl<Y, K, F> MapYield<Y, K, F> {
@@ -17,7 +19,7 @@ impl<Y, K, F> MapYield<Y, K, F> {
         MapYield {
             coro,
             f,
-            _phantom: std::marker::PhantomData,
+            _phantom: PhantomData,
         }
     }
 }
@@ -28,10 +30,10 @@ where
     F: FnMut(Y) -> Y2,
 {
     type Next = MapYield<Y, K::Next, F>;
-
-    fn resume(self, input: I) -> Suspended<Y2, R, Self::Next> {
+    type Suspend = Suspend<Y2, R, Self::Next>;
+    fn resume(self, input: I) -> Self::Suspend {
         let Self { coro, mut f, .. } = self;
-        match coro.resume(input) {
+        match coro.resume(input).into_enum() {
             Yield(y, next) => Yield(f(y), MapYield::new(next, f)),
             Return(r) => Return(r),
         }

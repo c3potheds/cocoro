@@ -1,6 +1,5 @@
 use crate::coro::Coro;
-use crate::suspended::Suspended;
-use Suspended::Yield;
+use crate::just_yield::Yielded;
 
 pub struct YieldWith<F> {
     f: F,
@@ -11,11 +10,20 @@ where
     F: FnMut(I) -> Y,
 {
     type Next = Self;
-    fn resume(mut self, input: I) -> Suspended<Y, R, Self::Next> {
-        Yield((self.f)(input), self)
+    type Suspend = Yielded<Y, Self>;
+    fn resume(mut self, input: I) -> Self::Suspend {
+        Yielded((self.f)(input), self)
     }
 }
 
+/// Yield with a value computed from a mutable function.
+///
+/// The state of a `yield_with()` coroutine is owned by the `FnMut`, which is
+/// responsible for updating its internal state and returning the next value to
+/// yield.
+///
+/// A `yield_with()` coroutine is a `FixedPointCoro`, which means that its
+/// `Next` state is always `Self`.
 pub fn yield_with<Y, I, F>(f: F) -> YieldWith<F>
 where
     F: FnMut(I) -> Y,

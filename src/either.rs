@@ -1,9 +1,10 @@
+use crate::coro::Coro;
+use crate::suspend::Suspend;
+use crate::suspended::Suspended;
 use either::Either;
-use crate::Coro;
-use crate::Suspended;
-use Suspended::{Return, Yield};
 use Either::Left;
 use Either::Right;
+use Suspend::{Return, Yield};
 
 /// Implement the `Coro`` trait for the `Either`` type when both variants
 /// themselves implement `Coro` for the same input and output types.
@@ -13,13 +14,14 @@ where
     B: Coro<Y, R, I>,
 {
     type Next = Either<A::Next, B::Next>;
-    fn resume(self, input: I) -> Suspended<Y, R, Self::Next> {
+    type Suspend = Suspend<Y, R, Self::Next>;
+    fn resume(self, input: I) -> Self::Suspend {
         match self {
-            Left(a) => match a.resume(input) {
+            Left(a) => match a.resume(input).into_enum() {
                 Yield(y, next) => Yield(y, Left(next)),
                 Return(r) => Return(r),
             },
-            Right(b) => match b.resume(input) {
+            Right(b) => match b.resume(input).into_enum() {
                 Yield(y, next) => Yield(y, Right(next)),
                 Return(r) => Return(r),
             },

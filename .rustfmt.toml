@@ -1,1 +1,4 @@
 max_width = 80
+# This is a nightly-only feature. Use `cargo +nightly fmt` to format the code in
+# doctests.
+format_code_in_doc_comments = true

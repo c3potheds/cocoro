@@ -1,41 +1,59 @@
-/// The state of a `Coro` coroutine after a call to `resume` as finished.
-///
-/// After a call to `resume()` finishes, the coroutine is in one of two states:
-///
-///   * `Yield(y, n)`: The coroutine yielded a value `y` and is ready to be
-///     resumed with the next input value. The next state of the coroutine is
-///    `n`, which necessarily implements the `Coro` trait.
-///   * `Return(r)`: The coroutine has finished and returned a value `r`. The
-///     coroutine cannot be resumed again, because the call to `resume()` has
-///     consumed it without giving back a `Coro` value to resume.
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
-pub enum Suspended<Y, R, N> {
-    Yield(Y, N),
-    Return(R),
+use crate::coro::Coro;
+use crate::suspend::Suspend;
+
+pub trait SuspendedVisitor<Y, R, I, N>
+where
+    N: Coro<Y, R, I>,
+{
+    type Out;
+    fn on_yield(self, y: Y, next: N) -> Self::Out;
+    fn on_return(self, r: R) -> Self::Out;
 }
 
-use Suspended::*;
+/// A trait for types that represent a suspended coroutine.
+/// 
+/// The `visit()` method can be thought of as equivalent to pattern-matching
+/// on the `Suspend` enum. In fact, the `Suspend` enum implements `Suspended`
+/// trait, and any implementation of `Suspended` can be converted to a `Suspend`
+/// enum using the `into_enum()` method, so the two are isomorphic.
+/// 
+/// The reason to use a trait instead of a concrete enum is to allow for
+/// implementations of `Coro` to specify `Suspend` associated types that are
+/// more specific than `Suspend<Y, R, N>`. For example, `just_yield()` knows
+/// that it never returns so it can return the `Yielded` struct, which
+/// implements `Suspended` but doesn't ever invoke `on_return()` on its visitor.
+pub trait Suspended<Y, R, I = ()>: Sized {
+    type Next: Coro<Y, R, I>;
+    fn visit<X>(
+        self,
+        visitor: impl SuspendedVisitor<Y, R, I, Self::Next, Out = X>,
+    ) -> X;
 
-impl<Y, R, N> Suspended<Y, R, N> {
-    /// Returns the yielded value and the next state of the coroutine, if the
-    /// coroutine is in the `Yield` state, or `None` otherwise.
-    ///
-    /// Compare to `Result::ok()` or `ControlFlow::continue_value()`.
-    pub fn as_yield(self) -> Option<(Y, N)> {
-        match self {
-            Yield(y, n) => Some((y, n)),
-            Return(_) => None,
-        }
+    fn into_enum(self) -> Suspend<Y, R, Self::Next> {
+        self.visit({
+            use Suspend::*;
+            struct AsEnum;
+            impl<Y, R, I, N> SuspendedVisitor<Y, R, I, N> for AsEnum
+            where
+                N: Coro<Y, R, I>,
+            {
+                type Out = Suspend<Y, R, N>;
+                fn on_yield(self, y: Y, next: N) -> Self::Out {
+                    Yield(y, next)
+                }
+                fn on_return(self, r: R) -> Self::Out {
+                    Return(r)
+                }
+            }
+            AsEnum
+        })
     }
 
-    /// Returns the return value of the coroutine, if the coroutine is in the
-    /// `Return` state, or `None` otherwise.
-    ///
-    /// Compare to `Result::err()` or `ControlFlow::break_value()`.
-    pub fn as_return(self) -> Option<R> {
-        match self {
-            Yield(_, _) => None,
-            Return(r) => Some(r),
-        }
+    fn into_yield(self) -> Option<(Y, Self::Next)> {
+        self.into_enum().into_yield()
+    }
+
+    fn into_return(self) -> Option<R> {
+        self.into_enum().into_return()
     }
 }

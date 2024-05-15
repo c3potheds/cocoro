@@ -1,9 +1,9 @@
-use cocoro::*;
+use super::*;
 
 #[test]
 fn just_yield_i32() {
     just_yield(10)
-        .returns::<()>()
+        .returns::<Void>()
         .assert_yields(10, ())
         .assert_yields(10, ())
         .assert_yields(10, ())
@@ -13,7 +13,7 @@ fn just_yield_i32() {
 #[test]
 fn just_yield_i32_map_yield() {
     just_yield(10)
-        .returns::<()>()
+        .returns::<Void>()
         .map_yield(|x| x * 2)
         .assert_yields(20, ())
         .assert_yields(20, ())
@@ -24,7 +24,7 @@ fn just_yield_i32_map_yield() {
 #[test]
 fn just_yield_i32_map_yield_map_twice() {
     just_yield(10)
-        .returns::<()>()
+        .returns::<Void>()
         .map_yield(|x| x * 2)
         .map_yield(|x| x + 1)
         .assert_yields(21, ())
@@ -36,7 +36,7 @@ fn just_yield_i32_map_yield_map_twice() {
 #[test]
 fn just_yield_just_yield_i32() {
     just_yield(just_yield(10))
-        .returns::<()>()
+        .returns::<Void>()
         .assert_yields(just_yield(10), ())
         .assert_yields(just_yield(10), ())
         .assert_yields(just_yield(10), ())
@@ -45,8 +45,9 @@ fn just_yield_just_yield_i32() {
 
 #[test]
 fn just_return_just_yield_flatten() {
-    just_return(just_yield(10).returns::<()>())
+    just_return(just_yield(10))
         .flatten()
+        .returns::<Void>()
         .assert_yields(10, ())
         .assert_yields(10, ())
         .assert_yields(10, ())
@@ -70,7 +71,7 @@ fn yield_cumulative_length_of_inputs() {
         length += s.len();
         length
     })
-    .returns::<()>()
+    .returns::<Void>()
     .assert_yields(3, "foo")
     .assert_yields(6, "bar")
     .assert_yields(9, "baz");
