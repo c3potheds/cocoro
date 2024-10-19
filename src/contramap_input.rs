@@ -10,9 +10,9 @@ impl<Src, F> ContramapInput<Src, F> {
         ContramapInput(coro, f)
     }
 }
-impl<Y, R, I1, I2, Src, F> Coro<Y, R, I1> for ContramapInput<Src, F>
+impl<I1, Y, R, I2, Src, F> Coro<I1, Y, R> for ContramapInput<Src, F>
 where
-    Src: Coro<Y, R, I2>,
+    Src: Coro<I2, Y, R>,
     F: FnMut(I1) -> I2,
 {
     type Next = ContramapInput<Src::Next, F>;

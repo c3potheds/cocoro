@@ -5,7 +5,7 @@ pub struct YieldWith<F> {
     f: F,
 }
 
-impl<Y, R, I, F> Coro<Y, R, I> for YieldWith<F>
+impl<I, Y, R, F> Coro<I, Y, R> for YieldWith<F>
 where
     F: FnMut(I) -> Y,
 {

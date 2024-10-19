@@ -15,7 +15,7 @@ pub struct TryMapYield<Y, K, F> {
 impl<Y, K, F> TryMapYield<Y, K, F> {
     pub fn new<R, I, Y2>(coro: K, f: F) -> Self
     where
-        K: Coro<Y, R, I>,
+        K: Coro<I, Y, R>,
         F: FnMut(Y) -> ControlFlow<R, Y2>,
     {
         TryMapYield {
@@ -26,9 +26,9 @@ impl<Y, K, F> TryMapYield<Y, K, F> {
     }
 }
 
-impl<Y, K, F, Y2, R, I> Coro<Y2, R, I> for TryMapYield<Y, K, F>
+impl<I, Y, K, F, Y2, R> Coro<I, Y2, R> for TryMapYield<Y, K, F>
 where
-    K: Coro<Y, R, I>,
+    K: Coro<I, Y, R>,
     F: FnMut(Y) -> ControlFlow<R, Y2>,
 {
     type Next = TryMapYield<Y, K::Next, F>;

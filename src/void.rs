@@ -25,7 +25,7 @@ impl<T, R, I> Suspended<T, R, I> for Void {
     }
 }
 
-impl<Y, R, I> Coro<Y, R, I> for Void {
+impl<I, Y, R> Coro<I, Y, R> for Void {
     type Next = Void;
     type Suspend = Void;
     fn resume(self, _: I) -> Self::Suspend {

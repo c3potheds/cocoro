@@ -8,10 +8,10 @@ use Suspend::{Return, Yield};
 
 /// Implement the `Coro`` trait for the `Either`` type when both variants
 /// themselves implement `Coro` for the same input and output types.
-impl<Y, R, I, A, B> Coro<Y, R, I> for Either<A, B>
+impl<I, Y, R, A, B> Coro<I, Y, R> for Either<A, B>
 where
-    A: Coro<Y, R, I>,
-    B: Coro<Y, R, I>,
+    A: Coro<I, Y, R>,
+    B: Coro<I, Y, R>,
 {
     type Next = Either<A::Next, B::Next>;
     type Suspend = Suspend<Y, R, Self::Next>;

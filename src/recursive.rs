@@ -2,11 +2,11 @@ use crate::coro::Coro;
 use crate::fixed_point::FixedPointCoro;
 use crate::suspend::Suspend;
 
-type RecursiveFn<'a, Y, R, I> =
-    dyn Fn(Recursive<'a, Y, R, I>, I) -> Suspend<Y, R, Recursive<'a, Y, R, I>>;
+type RecursiveFn<'a, I, Y, R> =
+    dyn Fn(Recursive<'a, I, Y, R>, I) -> Suspend<Y, R, Recursive<'a, I, Y, R>>;
 
-pub struct Recursive<'a, Y, R, I>(&'a RecursiveFn<'a, Y, R, I>);
-impl<'a, Y, R, I> Coro<Y, R, I> for Recursive<'a, Y, R, I> {
+pub struct Recursive<'a, I, Y, R>(&'a RecursiveFn<'a, I, Y, R>);
+impl<'a, I, Y, R> Coro<I, Y, R> for Recursive<'a, I, Y, R> {
     type Next = Self;
     type Suspend = Suspend<Y, R, Self>;
     fn resume(self, input: I) -> Self::Suspend {
@@ -58,12 +58,12 @@ impl<'a, Y, R, I> Coro<Y, R, I> for Recursive<'a, Y, R, I> {
 ///     .assert_yields(2, 1)
 ///     .assert_yields(3, 2);
 /// ```
-pub fn recursive<'a, Y, R, I, F>(f: &'a F) -> impl FixedPointCoro<Y, R, I> + 'a
+pub fn recursive<'a, I, Y, R, F>(f: &'a F) -> impl FixedPointCoro<I, Y, R> + 'a
 where
     Y: 'a,
     R: 'a,
     I: 'a,
-    F: Fn(Recursive<'_, Y, R, I>, I) -> Suspend<Y, R, Recursive<'_, Y, R, I>>
+    F: Fn(Recursive<'_, I, Y, R>, I) -> Suspend<Y, R, Recursive<'_, I, Y, R>>
         + 'static,
 {
     Recursive(f)

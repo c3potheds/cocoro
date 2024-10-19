@@ -11,21 +11,21 @@ pub struct JustYield<T>(T);
 /// known at compile time to always return, and never yield.
 pub struct Yielded<T, N>(pub T, pub N);
 
-impl<T, N, R, I> Suspended<T, R, I> for Yielded<T, N>
+impl<T, N, R, I> Suspended<I, T, R> for Yielded<T, N>
 where
-    N: Coro<T, R, I>,
+    N: Coro<I, T, R>,
 {
     type Next = N;
     fn visit<X>(
         self,
-        visitor: impl SuspendedVisitor<T, R, I, N, Out = X>,
+        visitor: impl SuspendedVisitor<I, T, R, N, Out = X>,
     ) -> X {
         let Self(y, n) = self;
         visitor.on_yield(y, n)
     }
 }
 
-impl<T, R, I> Coro<T, R, I> for JustYield<T>
+impl<T, R, I> Coro<I, T, R> for JustYield<T>
 where
     T: Copy,
 {

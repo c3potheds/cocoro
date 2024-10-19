@@ -12,8 +12,8 @@ pub struct Compose<I, Y1, A, B> {
 impl<I, Y1, A, B> Compose<I, Y1, A, B> {
     pub fn new<R, Y2>(a: A, b: B) -> Self
     where
-        A: Coro<Y1, R, I>,
-        B: Coro<Y2, R, Y1>,
+        A: Coro<I, Y1, R>,
+        B: Coro<Y1, Y2, R>,
     {
         Compose {
             a,
@@ -23,10 +23,10 @@ impl<I, Y1, A, B> Compose<I, Y1, A, B> {
     }
 }
 
-impl<I, Y1, Y2, R, A, B> Coro<Y2, R, I> for Compose<I, Y1, A, B>
+impl<I, Y1, Y2, R, A, B> Coro<I, Y2, R> for Compose<I, Y1, A, B>
 where
-    A: Coro<Y1, R, I>,
-    B: Coro<Y2, R, Y1>,
+    A: Coro<I, Y1, R>,
+    B: Coro<Y1, Y2, R>,
 {
     type Next = Compose<I, Y1, A::Next, B::Next>;
     type Suspend = Suspend<Y2, R, Self::Next>;

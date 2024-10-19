@@ -10,11 +10,11 @@ impl<K1, K2> Zip<K1, K2> {
     }
 }
 
-impl<Y1, Y2, R, I, K1, K2> Coro<(Y1, Y2), R, I> for Zip<K1, K2>
+impl<I, Y1, Y2, R, K1, K2> Coro<I, (Y1, Y2), R> for Zip<K1, K2>
 where
     I: Copy,
-    K1: Coro<Y1, R, I>,
-    K2: Coro<Y2, R, I>,
+    K1: Coro<I, Y1, R>,
+    K2: Coro<I, Y2, R>,
 {
     type Next = Zip<K1::Next, K2::Next>;
     type Suspend = Suspend<(Y1, Y2), R, Self::Next>;

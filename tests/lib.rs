@@ -5,7 +5,7 @@
 
 use cocoro::*;
 
-fn iota() -> impl FixedPointCoro<i32, Void, ()> {
+fn iota() -> impl FixedPointCoro<(), i32, Void> {
     let mut i = 0;
     yield_with(move |_| {
         i += 1;
@@ -22,7 +22,7 @@ fn into_iterator() {
 
 #[test]
 fn from_iterator() {
-    fn make_coro() -> impl Coro<i32, (), ()> {
+    fn make_coro() -> impl Coro<(), i32, ()> {
         vec![1, 2, 3].into_coro()
     }
     make_coro()

@@ -15,17 +15,17 @@ pub struct JustReturn<T>(T);
 /// known at compile time to always return, and never yield.
 pub struct Returned<T>(pub T);
 
-impl<Y, R, I> Suspended<Y, R, I> for Returned<R> {
+impl<I, Y, R> Suspended<I, Y, R> for Returned<R> {
     type Next = Void;
     fn visit<X>(
         self,
-        visitor: impl SuspendedVisitor<Y, R, I, Void, Out = X>,
+        visitor: impl SuspendedVisitor<I, Y, R, Void, Out = X>,
     ) -> X {
         visitor.on_return(self.0)
     }
 }
 
-impl<Y, T, I> Coro<Y, T, I> for JustReturn<T> {
+impl<Y, T, I> Coro<I, Y, T> for JustReturn<T> {
     type Next = Void;
     type Suspend = Returned<T>;
 

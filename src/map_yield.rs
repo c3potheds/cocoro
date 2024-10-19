@@ -13,7 +13,7 @@ pub struct MapYield<Y, K, F> {
 impl<Y, K, F> MapYield<Y, K, F> {
     pub fn new<R, I, Y2>(coro: K, f: F) -> Self
     where
-        K: Coro<Y, R, I>,
+        K: Coro<I, Y, R>,
         F: FnMut(Y) -> Y2,
     {
         MapYield {
@@ -24,9 +24,9 @@ impl<Y, K, F> MapYield<Y, K, F> {
     }
 }
 
-impl<Y, K, F, Y2, R, I> Coro<Y2, R, I> for MapYield<Y, K, F>
+impl<I, Y, K, F, Y2, R> Coro<I, Y2, R> for MapYield<Y, K, F>
 where
-    K: Coro<Y, R, I>,
+    K: Coro<I, Y, R>,
     F: FnMut(Y) -> Y2,
 {
     type Next = MapYield<Y, K::Next, F>;

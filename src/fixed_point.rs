@@ -17,7 +17,7 @@ use crate::coro::Coro;
 /// ```rust
 /// use cocoro::FixedPointCoro;
 ///
-/// fn take_coro(k: impl FixedPointCoro<i32, (), ()>) {
+/// fn take_coro(k: impl FixedPointCoro<(), i32, ()>) {
 ///     k.into_iter().for_each(|i| {
 ///         println!("{i}");
 ///     });
@@ -27,15 +27,15 @@ use crate::coro::Coro;
 /// It should not ever be necessary to implement this trait manually, because
 /// all `Coro` implementations that have `Next = Self` will automatically
 /// implement `FixedPointCoro`.
-pub unsafe trait FixedPointCoro<Y, R, I>:
-    Coro<Y, R, I, Next = Self>
+pub unsafe trait FixedPointCoro<I, Y, R>:
+    Coro<I, Y, R, Next = Self>
 {
 }
 
 /// `FixedPointcoro`` is implemented automatically for all coroutines whose
 /// `Next` associated type is `Self`. No other implementations should be
 /// necessary, and the trait should not be implemented manually.
-unsafe impl<Y, R, I, C> FixedPointCoro<Y, R, I> for C where
-    C: Coro<Y, R, I, Next = C>
+unsafe impl<I, Y, R, C> FixedPointCoro<I, Y, R> for C where
+    C: Coro<I, Y, R, Next = C>
 {
 }

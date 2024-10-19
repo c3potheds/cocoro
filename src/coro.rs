@@ -49,7 +49,7 @@ use Suspend::{Return, Yield};
 /// a type, or, more commonly, by using functions like `yield_with()` or
 /// `just_yield()` and chaining combinators like `map_yield()` and
 /// `map_return()`.
-pub trait Coro<Y, R, I = ()>: Sized {
+pub trait Coro<I, Y, R>: Sized {
     /// The next state of the coroutine after a call to `resume()`, if the
     /// coroutine yields a value.
     ///
@@ -61,7 +61,7 @@ pub trait Coro<Y, R, I = ()>: Sized {
     /// type. When the `Next` associated type is `Self`, the coroutine is said
     /// to be a "fixed-point coroutine," and it will automatically implement the
     /// `FixedPointCoro` subtrait of `Coro`.
-    type Next: Coro<Y, R, I>;
+    type Next: Coro<I, Y, R>;
 
     /// The type of the suspended state of the coroutine, which is either a
     /// "yield" state with a value of type `Y` and the next state of the
@@ -72,7 +72,7 @@ pub trait Coro<Y, R, I = ()>: Sized {
     /// return concrete types that are generic over yield or return types, such
     /// as the `Returned` type used by `just_return()`, which is generic over
     /// the yield type because it is statically known to never yield.
-    type Suspend: Suspended<Y, R, I, Next = Self::Next>;
+    type Suspend: Suspended<I, Y, R, Next = Self::Next>;
 
     /// Advances the coroutine to the next state, returning a suspended state
     /// that either "yields" a value of type `Y` or "returns" a value of type
@@ -111,7 +111,7 @@ pub trait Coro<Y, R, I = ()>: Sized {
     /// ```
     fn yields<Y2>(
         self,
-    ) -> impl Coro<Y, R, I, Next = Self::Next, Suspend = Self::Suspend>
+    ) -> impl Coro<I, Y, R, Next = Self::Next, Suspend = Self::Suspend>
     where
         Y2: Is<Type = Y>,
     {
@@ -124,7 +124,7 @@ pub trait Coro<Y, R, I = ()>: Sized {
     /// type, for example `yield_with()` and `just_yield()`, which are
     /// compatible with any return type because they never return. In other
     /// words, the coroutines returned by these functions implement
-    /// `Coro<Y, R, I>` for *infinitely many* types `R`. When you try to use
+    /// `Coro<I, Y, R>` for *infinitely many* types `R`. When you try to use
     /// these coroutines in a way that doesn't allow the compiler to infer
     /// *which* `R` type to interpret the coroutine as, you can get a compiler
     /// error. When using generic combinators on generic coroutines that are
@@ -172,7 +172,7 @@ pub trait Coro<Y, R, I = ()>: Sized {
     /// .assert_yields(2, ())
     /// .assert_yields(3, ());
     /// ```
-    fn returns<R2>(self) -> impl Coro<Y, R, I>
+    fn returns<R2>(self) -> impl Coro<I, Y, R>
     where
         R2: Is<Type = R>,
     {
@@ -286,7 +286,7 @@ pub trait Coro<Y, R, I = ()>: Sized {
     /// .assert_yields(15, ())
     /// .assert_yields(18, ());
     /// ```
-    fn contramap_input<I2, F>(self, f: F) -> impl Coro<Y, R, I2>
+    fn contramap_input<I2, F>(self, f: F) -> impl Coro<I2, Y, R>
     where
         F: FnMut(I2) -> I,
     {
@@ -319,10 +319,10 @@ pub trait Coro<Y, R, I = ()>: Sized {
     ///     .assert_yields(10, ())
     ///     .returns::<Void>();
     /// ```
-    fn flatten<R2>(self) -> impl Coro<Y, R2, I>
+    fn flatten<R2>(self) -> impl Coro<I, Y, R2>
     where
         I: Copy,
-        R: Coro<Y, R2, I>,
+        R: Coro<I, Y, R2>,
     {
         FlattenImpl::new(self)
     }
@@ -337,7 +337,7 @@ pub trait Coro<Y, R, I = ()>: Sized {
     /// ```rust
     /// use cocoro::{yield_with, Coro, Void};
     ///
-    /// fn iota() -> impl Coro<i32, Void, ()> {
+    /// fn iota() -> impl Coro<(), i32, Void> {
     ///     let mut i = 0;
     ///     yield_with(move |()| {
     ///         i += 1;
@@ -355,11 +355,11 @@ pub trait Coro<Y, R, I = ()>: Sized {
     ///     .assert_yields(3, ())
     ///     .assert_returns(None, ());
     /// ```
-    fn flat_map<R2, K2, F>(self, f: F) -> impl Coro<Y, R2, I>
+    fn flat_map<R2, K2, F>(self, f: F) -> impl Coro<I, Y, R2>
     where
         I: Copy,
         F: FnMut(R) -> K2,
-        K2: Coro<Y, R2, I>,
+        K2: Coro<I, Y, R2>,
     {
         self.map_return(f).flatten()
     }
@@ -474,7 +474,7 @@ pub trait Coro<Y, R, I = ()>: Sized {
     /// ), which uses the unstable `!` type to establish a similar precondition.
     fn into_return(self, input: I) -> R
     where
-        Self: Coro<Y, R, I, Next = Void>,
+        Self: Coro<I, Y, R, Next = Void>,
     {
         match self.resume(input).into_enum() {
             Return(r) => r,
@@ -493,7 +493,7 @@ pub trait Coro<Y, R, I = ()>: Sized {
     /// return with a value, the result of the function is `ControlFlow` instead
     /// of `Option`, where the "break" type of the `ControlFlow` must be the
     /// same type as the coroutine's return type.
-    fn map_yield_while<Y2, F>(self, f: F) -> impl Coro<Y2, R, I>
+    fn map_yield_while<Y2, F>(self, f: F) -> impl Coro<I, Y2, R>
     where
         F: FnMut(Y) -> ControlFlow<R, Y2>,
     {
@@ -505,7 +505,7 @@ pub trait Coro<Y, R, I = ()>: Sized {
     /// coroutine yields fewer than `n` elements, the new coroutine will yield
     /// all of them and then return with `Some` containing the return value of
     /// the original coroutine.
-    fn take(self, mut n: usize) -> impl Coro<Y, Option<R>, I> {
+    fn take(self, mut n: usize) -> impl Coro<I, Y, Option<R>> {
         self.map_return(Some).map_yield_while(move |y| {
             if n == 0 {
                 ControlFlow::Break(None)
@@ -534,7 +534,7 @@ pub trait Coro<Y, R, I = ()>: Sized {
     /// ```rust
     /// use cocoro::{just_yield, yield_with, Coro, Void};
     ///
-    /// fn iota() -> impl Coro<i32, Void, ()> {
+    /// fn iota() -> impl Coro<(), i32, Void> {
     ///     let mut i = 0;
     ///     yield_with(move |()| {
     ///         i += 1;
@@ -542,7 +542,7 @@ pub trait Coro<Y, R, I = ()>: Sized {
     ///     })
     /// }
     ///
-    /// fn sum() -> impl Coro<i32, Void, i32> {
+    /// fn sum() -> impl Coro<i32, i32, Void> {
     ///     let mut sum = 0;
     ///     yield_with(move |i| {
     ///         sum += i;
@@ -557,9 +557,9 @@ pub trait Coro<Y, R, I = ()>: Sized {
     ///     .assert_yields(10, ())
     ///     .assert_yields(15, ());
     /// ```
-    fn compose<Y2, K2>(self, other: K2) -> impl Coro<Y2, R, I>
+    fn compose<Y2, K2>(self, other: K2) -> impl Coro<I, Y2, R>
     where
-        K2: Coro<Y2, R, Y>,
+        K2: Coro<Y, Y2, R>,
     {
         Compose::new(self, other)
     }
@@ -630,7 +630,7 @@ pub trait Coro<Y, R, I = ()>: Sized {
     /// .assert_yields((2, 4), ())
     /// .assert_yields((3, 6), ());
     /// ```
-    fn zip<Y2>(self, other: impl Coro<Y2, R, I>) -> impl Coro<(Y, Y2), R, I>
+    fn zip<Y2>(self, other: impl Coro<I, Y2, R>) -> impl Coro<I, (Y, Y2), R>
     where
         I: Copy,
     {
@@ -675,7 +675,7 @@ pub trait Coro<Y, R, I = ()>: Sized {
     /// ```
     fn bootstrap(self, init: Y) -> R
     where
-        Self: Coro<Y, R, Y>,
+        Self: Coro<Y, Y, R>,
     {
         match self.resume(init).into_enum() {
             Yield(y, next) => next.bootstrap(y),
@@ -702,7 +702,7 @@ pub trait Coro<Y, R, I = ()>: Sized {
     fn into_iter(self) -> impl Iterator<Item = Y>
     where
         I: Default,
-        Self: FixedPointCoro<Y, R, I> + Sized,
+        Self: FixedPointCoro<I, Y, R> + Sized,
     {
         let mut src = Some(self);
         core::iter::from_fn(move || match src.take() {

@@ -8,7 +8,7 @@ use crate::suspended::SuspendedVisitor;
 ///
 ///   * `Yield(y, n)`: The coroutine yielded a value `y` and is ready to be
 ///     resumed with the next input value. The next state of the coroutine is
-///    `n`, which necessarily implements the `Coro` trait.
+///     `n`, which necessarily implements the `Coro` trait.
 ///   * `Return(r)`: The coroutine has finished and returned a value `r`. The
 ///     coroutine cannot be resumed again, because the call to `resume()` has
 ///     consumed it without giving back a `Coro` value to resume.
@@ -46,14 +46,14 @@ impl<Y, R, N> Suspend<Y, R, N> {
 
 /// `Suspend` implements the `Suspended` trait; indeed, most coroutines simply
 /// use `Suspend` as their associated `Suspend` type.
-impl<Y, R, I, N> Suspended<Y, R, I> for Suspend<Y, R, N>
+impl<I, Y, R, N> Suspended<I, Y, R> for Suspend<Y, R, N>
 where
-    N: Coro<Y, R, I>,
+    N: Coro<I, Y, R>,
 {
     type Next = N;
     fn visit<X>(
         self,
-        visitor: impl SuspendedVisitor<Y, R, I, N, Out = X>,
+        visitor: impl SuspendedVisitor<I, Y, R, N, Out = X>,
     ) -> X {
         match self {
             Yield(y, next) => visitor.on_yield(y, next),

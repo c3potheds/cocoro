@@ -13,7 +13,7 @@ pub struct MapReturn<R, K, F> {
 impl<R, K, F> MapReturn<R, K, F> {
     pub fn new<Y, I, R2>(coro: K, f: F) -> Self
     where
-        K: Coro<Y, R, I>,
+        K: Coro<I, Y, R>,
         F: FnOnce(R) -> R2,
     {
         MapReturn {
@@ -24,9 +24,9 @@ impl<R, K, F> MapReturn<R, K, F> {
     }
 }
 
-impl<Y, K, F, R, I, R2> Coro<Y, R2, I> for MapReturn<R, K, F>
+impl<I, Y, K, F, R, R2> Coro<I, Y, R2> for MapReturn<R, K, F>
 where
-    K: Coro<Y, R, I>,
+    K: Coro<I, Y, R>,
     F: FnOnce(R) -> R2,
 {
     type Next = MapReturn<R, K::Next, F>;

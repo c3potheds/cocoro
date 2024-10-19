@@ -4,11 +4,11 @@ use crate::suspended::Suspended;
 #[derive(Clone, Debug)]
 pub struct FromFn<F>(F);
 
-impl<I, Y, R, N, S, F> Coro<Y, R, I> for FromFn<F>
+impl<I, Y, R, N, S, F> Coro<I, Y, R> for FromFn<F>
 where
     F: FnOnce(I) -> S,
-    S: Suspended<Y, R, I, Next = N>,
-    N: Coro<Y, R, I>,
+    S: Suspended<I, Y, R, Next = N>,
+    N: Coro<I, Y, R>,
 {
     type Next = N;
     type Suspend = S;
@@ -52,13 +52,13 @@ where
 ///     .assert_yields(1, ())
 ///     .assert_returns("Blastoff!", ());
 /// ```
-pub fn from_fn<Y, R, I, N, S, F>(
+pub fn from_fn<I, Y, R, N, S, F>(
     f: F,
-) -> impl Coro<Y, R, I, Next = N, Suspend = S>
+) -> impl Coro<I, Y, R, Next = N, Suspend = S>
 where
     F: FnOnce(I) -> S,
-    S: Suspended<Y, R, I, Next = N>,
-    N: Coro<Y, R, I>,
+    S: Suspended<I, Y, R, Next = N>,
+    N: Coro<I, Y, R>,
 {
     FromFn(f)
 }

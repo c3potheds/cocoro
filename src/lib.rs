@@ -8,26 +8,26 @@
 //! In this crate, the core coroutine trait looks like:
 //!
 //! ```rust
-//! pub trait SuspendedVisitor<Y, R, I, N>
+//! pub trait SuspendedVisitor<I, Y, R, N>
 //! where
-//!     N: Coro<Y, R, I>,
+//!     N: Coro<I, Y, R>,
 //! {
 //!     type Out;
 //!     fn on_yield(self, y: Y, next: N) -> Self::Out;
 //!     fn on_return(self, r: R) -> Self::Out;
 //! }
 //!
-//! pub trait Suspended<Y, R, I> {
-//!     type Next: Coro<Y, R, I>;
+//! pub trait Suspended<I, Y, R> {
+//!     type Next: Coro<I, Y, R>;
 //!     fn visit<X>(
 //!         self,
-//!         visitor: impl SuspendedVisitor<Y, R, I, Self::Next, Out = X>,
+//!         visitor: impl SuspendedVisitor<I, Y, R, Self::Next, Out = X>,
 //!     ) -> X;
 //! }
 //!
-//! pub trait Coro<Y, R, I = ()>: Sized {
-//!     type Next: Coro<Y, R, I>;
-//!     type Suspend: Suspended<Y, R, I, Next = Self::Next>;
+//! pub trait Coro<I, Y, R = ()>: Sized {
+//!     type Next: Coro<I, Y, R>;
+//!     type Suspend: Suspended<I, Y, R, Next = Self::Next>;
 //!     fn resume(self, input: I) -> Self::Suspend;
 //! }
 //! ```
@@ -80,7 +80,7 @@
 //! use cocoro::{Coro, Suspended, Yielded};
 //!
 //! struct Counter(i32);
-//! impl Coro<i32, (), ()> for Counter {
+//! impl Coro<(), i32, ()> for Counter {
 //!     type Next = Self;
 //!     type Suspend = Yielded<i32, Self>;
 //!     fn resume(self, _: ()) -> Self::Suspend {
@@ -142,7 +142,7 @@
 //! #[derive(Debug, PartialEq, Eq)]
 //! struct Blastoff;
 //!
-//! impl Coro<i32, Blastoff, ()> for Three {
+//! impl Coro<(), i32, Blastoff> for Three {
 //!     type Next = Two;
 //!     type Suspend = Yielded<i32, Self::Next>;
 //!     fn resume(self, _: ()) -> Self::Suspend {
@@ -150,7 +150,7 @@
 //!     }
 //! }
 //!
-//! impl Coro<i32, Blastoff, ()> for Two {
+//! impl Coro<(), i32, Blastoff> for Two {
 //!     type Next = One;
 //!     type Suspend = Yielded<i32, Self::Next>;
 //!     fn resume(self, _: ()) -> Self::Suspend {
@@ -158,7 +158,7 @@
 //!     }
 //! }
 //!
-//! impl Coro<i32, Blastoff, ()> for One {
+//! impl Coro<(), i32, Blastoff> for One {
 //!     type Next = Blastoff;
 //!     type Suspend = Yielded<i32, Self::Next>;
 //!     fn resume(self, _: ()) -> Self::Suspend {
@@ -166,7 +166,7 @@
 //!     }
 //! }
 //!
-//! impl Coro<i32, Blastoff, ()> for Blastoff {
+//! impl Coro<(), i32, Blastoff> for Blastoff {
 //!     type Next = Void;
 //!     type Suspend = Returned<Blastoff>;
 //!     fn resume(self, _: ()) -> Self::Suspend {
@@ -385,7 +385,7 @@
 //! coroutine depending on whether it is known to branch at runtime.
 //!
 //! ## Why are the yield and return types generic type parameters?
-//! 
+//!
 //! It's an established convention in Rust that "input" types for a trait are
 //! generic types, and "output" types are associated types, as seen in the
 //! `FnOnce` trait. It's important that traits like this can be generic over
@@ -393,7 +393,7 @@
 //! input types. This is what allows the `Fn` series of traits to work with
 //! reference types, which are actually higher-ranked types that are generic
 //! over an elided lifetime parameter.
-//! 
+//!
 //! The `Coro` trait is generic over not just the input type, but the yield and
 //! return types too. This is to allow a type that implements `Coro` to
 //! implement the trait for arbitrarily many input, yield, and return types.

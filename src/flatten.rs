@@ -17,11 +17,11 @@ impl<Y, Outer, Inner> FlattenImpl<Y, Outer, Inner> {
     }
 }
 
-impl<Y, R, I, Outer, Inner> Coro<Y, R, I> for FlattenImpl<Y, Outer, Inner>
+impl<I, Y, R, Outer, Inner> Coro<I, Y, R> for FlattenImpl<Y, Outer, Inner>
 where
     I: Copy,
-    Outer: Coro<Y, Inner, I>,
-    Inner: Coro<Y, R, I>,
+    Outer: Coro<I, Y, Inner>,
+    Inner: Coro<I, Y, R>,
 {
     type Next = Either<FlattenImpl<Y, Outer::Next, Inner>, Inner::Next>;
     type Suspend = Suspend<Y, R, Self::Next>;
