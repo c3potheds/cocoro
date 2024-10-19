@@ -601,7 +601,8 @@ pub trait Coro<I, Y, R>: Sized {
     }
 
     /// Zips the yielded values of this coroutine with the yielded values of
-    /// `other`, yielding pairs of values until either coroutine returns.
+    /// `other`, yielding pairs of values from pairs of inputs until either
+    /// coroutine returns.
     ///
     /// This is similar to the `zip()` method on iterators, but it works with
     /// coroutines that yield values instead of iterators that produce values.
@@ -626,14 +627,43 @@ pub trait Coro<I, Y, R>: Sized {
     ///     j
     /// }))
     /// .returns::<Void>()
+    /// .assert_yields((1, 2), ((), ()))
+    /// .assert_yields((2, 4), ((), ()))
+    /// .assert_yields((3, 6), ((), ()));
+    /// ```
+    ///
+    /// Note that the input type of the zipped coroutine is a tuple of the
+    /// input types of the two coroutines being zipped, which is why we need to
+    /// pass `((), ()` as the input. There are a couple of easy techniques to
+    /// simplify this:
+    ///
+    /// 1. Use `Default::default()` as the input, if the input type is `Default`.
+    /// 2. Use `contramap_input()` to change the input type.
+    ///
+    /// ```rust
+    /// use cocoro::{yield_with, Coro, Void};
+    ///
+    /// let mut i = 0;
+    /// let mut j = 0;
+    /// yield_with(move |()| {
+    ///     i += 1;
+    ///     i
+    /// })
+    /// .zip(yield_with(move |()| {
+    ///     j += 2;
+    ///     j
+    /// }))
+    /// // Contramap the tuple of inputs ((), ()) to just ().
+    /// .contramap_input(|()| ((), ()))
+    /// .returns::<Void>()
     /// .assert_yields((1, 2), ())
     /// .assert_yields((2, 4), ())
     /// .assert_yields((3, 6), ());
     /// ```
-    fn zip<Y2>(self, other: impl Coro<I, Y2, R>) -> impl Coro<I, (Y, Y2), R>
-    where
-        I: Copy,
-    {
+    fn zip<I2, Y2>(
+        self,
+        other: impl Coro<I2, Y2, R>,
+    ) -> impl Coro<(I, I2), (Y, Y2), R> {
         Zip::new(self, other)
     }
 
