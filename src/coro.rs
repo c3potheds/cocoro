@@ -129,7 +129,7 @@ pub trait Coro<I, Y, R>: Sized {
     /// *which* `R` type to interpret the coroutine as, you can get a compiler
     /// error. When using generic combinators on generic coroutines that are
     /// generic over the return type, the compiler often isn't able to infer the
-    /// return type and asksn you to make it explicit.
+    /// return type and asks you to make it explicit.
     ///
     /// If you get a "type annotations needed" error that mentions the return
     /// type R, chances are, you need to explicitly specify the return type.
