@@ -749,4 +749,31 @@ pub trait Coro<I, Y, R>: Sized {
             None => None,
         })
     }
+
+    /// Combines two coroutines with the same input and yield types by
+    /// interleaving their yielded values, alternating which coroutine is
+    /// delegated to each time the composed coroutine is resumed. If one
+    /// coroutine returns, the composed coroutine will yield the remaining
+    /// values from the other coroutine, then return with the return values of
+    /// both coroutines as a tuple.
+    ///
+    /// ```rust
+    /// use cocoro::{yield_with, Coro, IntoCoro, Void};
+    ///
+    /// let a = ["a1", "a2"].into_coro().map_return(|()| "A");
+    /// let b = ["b1", "b2", "b3"].into_coro().map_return(|()| "B");
+    /// a.join(b)
+    ///     .assert_yields("a1", ())
+    ///     .assert_yields("b1", ())
+    ///     .assert_yields("a2", ())
+    ///     .assert_yields("b2", ())
+    ///     .assert_yields("b3", ())
+    ///     .assert_returns(("A", "B"), ());
+    /// ```
+    fn join<R2>(self, other: impl Coro<I, Y, R2>) -> impl Coro<I, Y, (R, R2)>
+    where
+        I: Copy,
+    {
+        crate::join::join(self, other)
+    }
 }
