@@ -2,7 +2,7 @@ use crate::coro::Coro;
 use crate::suspended::Suspended;
 use crate::suspended::SuspendedVisitor;
 
-/// The state of a `Coro` coroutine after a call to `resume` as finished.
+/// The state of a `Coro` coroutine after a call to `resume()` has finished.
 ///
 /// After a call to `resume()` finishes, the coroutine is in one of two states:
 ///

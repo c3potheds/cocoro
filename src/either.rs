@@ -6,7 +6,7 @@ use Either::Left;
 use Either::Right;
 use Suspend::{Return, Yield};
 
-/// Implement the `Coro`` trait for the `Either`` type when both variants
+/// Implements the `Coro` trait for the `Either` type when both variants
 /// themselves implement `Coro` for the same input and output types.
 impl<I, Y, R, A, B> Coro<I, Y, R> for Either<A, B>
 where

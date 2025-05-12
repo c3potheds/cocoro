@@ -3,16 +3,16 @@ use crate::coro::Coro;
 /// A refinement of the `Coro` trait that specifies that the `Next` associated
 /// type must be `Self`.
 ///
-/// When a coroutine implements `FixedPointCoro`, certain algorithms that
-/// require in-place mutation of a coroutine can be implemented. For example,
-/// an iterator can be constructed from any `FixedPointCoro` that accepts `()`
+/// Implementing `FixedPointCoro` allows algorithms that require in-place
+/// mutation of a coroutine, such as creating an iterator. For example, an
+/// iterator can be constructed from any `FixedPointCoro` that accepts `()`
 /// (or anything else that implements `Default`) as an input type.
 ///
 /// # Safety
 ///
 /// This is a marker trait that tells the compiler that the coroutine's `Next`
-/// associated type is `Self`. Functions that take a fixed point coroutine as
-/// an input should typically use a constraint like the following:
+/// associated type is `Self`. Functions that take a fixed-point coroutine as
+/// input should typically use a constraint like this:
 ///
 /// ```rust
 /// use cocoro::FixedPointCoro;
@@ -24,15 +24,15 @@ use crate::coro::Coro;
 /// }
 /// ```
 ///
-/// It should not ever be necessary to implement this trait manually, because
-/// all `Coro` implementations that have `Next = Self` will automatically
-/// implement `FixedPointCoro`.
+/// It should never be necessary to implement this trait manually, as all
+/// `Coro` implementations where `Next = Self` will automatically implement
+/// `FixedPointCoro`.
 pub unsafe trait FixedPointCoro<I, Y, R>:
     Coro<I, Y, R, Next = Self>
 {
 }
 
-/// `FixedPointcoro`` is implemented automatically for all coroutines whose
+/// `FixedPointCoro` is implemented automatically for all coroutines whose
 /// `Next` associated type is `Self`. No other implementations should be
 /// necessary, and the trait should not be implemented manually.
 unsafe impl<I, Y, R, C> FixedPointCoro<I, Y, R> for C where

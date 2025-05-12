@@ -4,9 +4,9 @@ use Suspend::{Return, Yield};
 
 /// Implemented by types that can be converted into a coroutine.
 ///
-/// Notably, all types that implement `IntoIterator` can be converted into a
-/// coroutine that takes the unit type `()` as input, yields the elements of the
-/// iterator, and returns `()` when the iterator is exhausted.
+/// Notably, types implementing `IntoIterator` can be converted into a
+/// coroutine. This coroutine takes `()` as input, yields the iterator's
+/// elements, and returns `()` when the iterator is exhausted.
 pub trait IntoCoro<I, Y, R> {
     type IntoCoro: Coro<I, Y, R>;
     fn into_coro(self) -> Self::IntoCoro;
