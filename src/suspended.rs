@@ -13,9 +13,9 @@ where
 /// A trait for types that represent a suspended coroutine.
 ///
 /// The `visit()` method can be thought of as equivalent to pattern-matching
-/// on the `Suspend` enum. In fact, the `Suspend` enum implements `Suspended`
-/// trait, and any implementation of `Suspended` can be converted to a `Suspend`
-/// enum using the `into_enum()` method, so the two are isomorphic.
+/// on the `Suspend` enum. In fact, the `Suspend` enum implements the
+/// `Suspended` trait. Any implementation of `Suspended` can be converted
+/// to a `Suspend` enum using `into_enum()`, so the two are isomorphic.
 ///
 /// The reason to use a trait instead of a concrete enum is to allow for
 /// implementations of `Coro` to specify `Suspend` associated types that are

@@ -16,7 +16,7 @@ where
     }
 }
 
-/// Yield with a value computed from a mutable function.
+/// Creates a coroutine that yields values computed by a mutable function.
 ///
 /// The state of a `yield_with()` coroutine is owned by the `FnMut`, which is
 /// responsible for updating its internal state and returning the next value to

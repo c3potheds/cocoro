@@ -36,7 +36,7 @@ impl<'a, I, Y, R> Coro<I, Y, R> for Recursive<'a, I, Y, R> {
 ///
 /// Whereas `yield_with()` is useful for infinite coroutines that never return,
 /// and `from_fn()` is useful for guaranteed-finite coroutines that must return
-/// by some knowable finite amount of steps, `recursive()` is useful for
+/// within a knowable finite number of steps, `recursive()` is useful for
 /// creating coroutines that may return, but without a finite bound known at
 /// compile time.
 ///

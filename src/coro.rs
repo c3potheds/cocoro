@@ -15,35 +15,35 @@ use Suspend::{Return, Yield};
 
 /// A coroutine that can be resumed with an input value of type `I`, returning
 /// a suspended state that either "yields" a value of type `Y` or "returns" a
-/// a value of type `R`.
+/// value of type `R`.
 ///
-/// Unlike a `std::ops::Coroutine`, the Rust standard library's coroutine
-/// trait, this trait's `resume()` method consumes the coroutine, and gives the
-/// caller a new coroutine instance to continue `resume()`ing *only* if the
+/// Unlike `std::ops::Coroutine`, the Rust standard library's coroutine
+/// trait, this trait's `resume()` method consumes the coroutine. It gives the
+/// caller a new coroutine instance to continue `resume()`-ing *only* if the
 /// coroutine yielded a value. If the coroutine returned instead, no new
 /// coroutine is provided back to the caller, so it is impossible to continue
 /// the coroutine after it has returned.
 ///
-/// Contrast to something like `Iterator`, which lets you call `next()` as many
-/// times as you want, even after it has returned `None`. Implementors of
-/// `Iterator`s are expected to return `None` every time after they have once
+/// Contrast this with `Iterator`, which lets you call `next()` as many
+/// times as you want, even after it has returned `None`. Implementers of
+/// `Iterator` are expected to return `None` every time after they have once
 /// returned `None`, but there is no way to enforce this in the type system.
 /// Meanwhile, consumers of `Iterator`s tend not to test for cases where the
 /// iterators they are given violate this contract. This can lead to subtle bugs
 /// that are difficult to track down.
 ///
-/// The `std::iter` library provides a `fused()` combinator and a
+/// The `std::iter` library provides the `Iterator::fuse()` method and the
 /// `FusedIterator` trait to attempt to mitigate these risks, but there is no
 /// substitute for type safety. The `Coro` trait is an experiment in using move
 /// semantics to enforce the contracts implicit in the design of `Coroutine` and
 /// similar traits like `Iterator` and `Future`.
 ///
 /// Note that with this design, we don't need to use `Pin` at all, the way that
-/// `std::ops::Coroutine` and `std::future::Future` do. This is because `Coro`
-/// implementations can't be constructed with language-native features like
-/// generator blocks or async blocks, but this library attempts to make it
-/// easy to create rich, expressive coroutines with normal closures and
-/// combinators, without the need for self-referential data structures.
+/// `std::ops::Coroutine` and `std::future::Future` do. `Coro`
+/// implementations are not constructed with language-native features like
+/// generator or async blocks. Instead, this library provides ways to create
+/// rich, expressive coroutines using normal closures and combinators,
+/// avoiding the need for self-referential data structures.
 ///
 /// `cocoro` coroutines tend to be constructed by either implementing `Coro` for
 /// a type, or, more commonly, by using functions like `yield_with()` or
@@ -56,11 +56,11 @@ pub trait Coro<I, Y, R>: Sized {
     /// If the coroutine can only return, the `Next` associated type may be
     /// `Void`.
     ///
-    /// It is possible, and common, for the `Next` associated type to be `Self`
+    /// It is possible, and common, for `Next` to be `Self`
     /// if the coroutine's full state machine can be represented by a single
-    /// type. When the `Next` associated type is `Self`, the coroutine is said
-    /// to be a "fixed-point coroutine," and it will automatically implement the
-    /// `FixedPointCoro` subtrait of `Coro`.
+    /// type. When `Next` is `Self`, the coroutine is a
+    /// "fixed-point coroutine" and automatically implements the `FixedPointCoro`
+    /// subtrait.
     type Next: Coro<I, Y, R>;
 
     /// The type of the suspended state of the coroutine, which is either a
@@ -68,10 +68,10 @@ pub trait Coro<I, Y, R>: Sized {
     /// coroutine, or a "return" state with a value of type `R`.
     ///
     /// Usually, this is `Suspend<Y, R, Self::Next>`, but it can be any type
-    /// that implements the `Suspended` trait. This makes it possible to
-    /// return concrete types that are generic over yield or return types, such
-    /// as the `Returned` type used by `just_return()`, which is generic over
-    /// the yield type because it is statically known to never yield.
+    /// that implements the `Suspended` trait. This allows returning concrete
+    /// types generic over yield or return types. For example, `just_return()`
+    /// uses the `Returned` type, which is generic over the yield type because
+    /// it's statically known to never yield.
     type Suspend: Suspended<I, Y, R, Next = Self::Next>;
 
     /// Advances the coroutine to the next state, returning a suspended state
@@ -99,7 +99,7 @@ pub trait Coro<I, Y, R>: Sized {
     /// ever return when suspended).
     ///
     /// This has no runtime overhead; the result of this function is necessarily
-    /// the same as `self`, just reinterpreted as particular `Coro`
+    /// the same as `self`, just reinterpreted as a particular `Coro`
     /// implementation that has a specific yield type.
     ///
     /// # Examples
@@ -131,10 +131,10 @@ pub trait Coro<I, Y, R>: Sized {
     /// generic over the return type, the compiler often isn't able to infer the
     /// return type and asks you to make it explicit.
     ///
-    /// If you get a "type annotations needed" error that mentions the return
-    /// type R, chances are, you need to explicitly specify the return type.
+    /// If you get a "type annotations needed" error involving the return
+    /// type `R`, you likely need to specify it explicitly.
     ///
-    /// The primary function of this method is an ergonomic way to do just that.
+    /// This method provides an ergonomic way to do that.
     /// The most common use is to call it on a coroutine returned by a function
     /// like `yield_with()` with a type parameter specified by `::<()>`, which
     /// tells the compiler to pretend it returns with `()` as a value.
@@ -154,7 +154,7 @@ pub trait Coro<I, Y, R>: Sized {
     /// generically create an instance of any type.
     ///
     /// This has no runtime overhead; the result of this function is necessarily
-    /// the same as `self`, just reinterpreted as particular `Coro`
+    /// the same as `self`, just reinterpreted as a particular `Coro`
     /// implementation that has a specific return type.
     ///
     /// # Examples
@@ -215,11 +215,11 @@ pub trait Coro<I, Y, R>: Sized {
     }
 
     /// Calls the provided closure on the *return value* of this coroutine. The
-    /// coroutine provided will return the result of the closure.
+    /// resulting coroutine will return the result of the closure.
     ///
     /// Because coroutines can only return once, the closure type is `FnOnce`.
     /// This allows you to do things in the closure that can only be done once,
-    /// like free a resource even resume another coroutine.
+    /// like freeing a resource or resuming another coroutine.
     ///
     /// Compare to [`std::iter::Iterator::map()`](
     ///    https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.map
@@ -259,9 +259,9 @@ pub trait Coro<I, Y, R>: Sized {
     /// function's *output* type that needs to match this coroutine's input
     /// type.
     ///
-    /// One possible use case is to turn a coroutine that requires an input
-    /// type, say `&str`, into a coroutine that accepts `()` as an input type,
-    /// which enables algorithms like `for_each()`. Just provide a function that
+    /// One use case is converting a coroutine requiring an input
+    /// type, say `&str`, to one accepting `()`, which
+    /// enables algorithms like `for_each()`. Just provide a function that
     /// takes `()` as input and returns some `&str` to pass to the original
     /// coroutine.
     ///
@@ -299,7 +299,7 @@ pub trait Coro<I, Y, R>: Sized {
     /// and you want to treat the two coroutines as a single coroutine. This is
     /// similar to how `Option<Option<T>>` can be flattened into `Option<T>`.
     ///
-    /// You can "chain" coroutines together by having a coroutine return another
+    /// You can "chain" coroutines by having one return another
     /// and then calling `flatten()` on the result.
     ///
     /// In cases where the first coroutine doesn't already return the second,
@@ -465,9 +465,9 @@ pub trait Coro<I, Y, R>: Sized {
 
     /// Executes the last step of the coroutine, returning the return value.
     ///
-    /// This will never panic because it is only invocable on a coroutine that
-    /// is statically known to never yield again. This is expressed by setting
-    /// the `Next` associated type to `Void`.
+    /// This method will never panic because it's only callable on a coroutine
+    /// that is statically known to never yield again. This is expressed by
+    /// setting the `Next` associated type to `Void`.
     ///
     /// Compare to [`Result::into_ok()`](
     ///     https://doc.rust-lang.org/std/result/enum.Result.html#method.into_ok
@@ -489,7 +489,7 @@ pub trait Coro<I, Y, R>: Sized {
     /// When `try_trait_v2` is stabilized, expect this method to be extended to
     /// work with closures that return any type that implements `Try`.
     ///
-    /// This is similar to `map_while()` in `Iterator`, but because coroutines
+    /// This is similar to `Iterator::map_while()`, but because coroutines
     /// return with a value, the result of the function is `ControlFlow` instead
     /// of `Option`, where the "break" type of the `ControlFlow` must be the
     /// same type as the coroutine's return type.
@@ -500,11 +500,11 @@ pub trait Coro<I, Y, R>: Sized {
         TryMapYield::new(self, f)
     }
 
-    /// Creates a coroutine that yields the first `n` elements yielded from this
-    /// coroutine, then returns with `None` as the return value. If the original
-    /// coroutine yields fewer than `n` elements, the new coroutine will yield
-    /// all of them and then return with `Some` containing the return value of
-    /// the original coroutine.
+    /// Creates a coroutine that yields the first `n` elements from this
+    /// coroutine. It then returns `None` if `n` elements were yielded. If the
+    /// original coroutine yields fewer than `n` elements, the new coroutine
+    /// will yield all of them and then return `Some` containing the return
+    /// value of the original coroutine.
     fn take(self, mut n: usize) -> impl Coro<I, Y, Option<R>> {
         self.map_return(Some).map_yield_while(move |y| {
             if n == 0 {
@@ -564,9 +564,9 @@ pub trait Coro<I, Y, R>: Sized {
         Compose::new(self, other)
     }
 
-    /// Drives this coroutine with default values until it returns, invoking the
-    /// given function with each yielded value, and returning the closure's
-    /// return value.
+    /// Drives this coroutine with default input values until it returns. It
+    /// invokes the given function `f` for each yielded value. Finally, it
+    /// returns the return value `R` of the original coroutine.
     ///
     /// This will recur infinitely if the coroutine never returns!
     ///
@@ -607,9 +607,9 @@ pub trait Coro<I, Y, R>: Sized {
     /// This is similar to the `zip()` method on iterators, but it works with
     /// coroutines that yield values instead of iterators that produce values.
     ///
-    /// The return type and input type of both coroutines must be the same, and
-    /// the return value of the composed coroutine will be the return value of
-    /// the first coroutine to return.
+    /// The return type `R` of both coroutines must be the same, and the return
+    /// value of the composed coroutine will be the return value of the first
+    /// coroutine to return.
     ///
     /// # Examples
     ///
@@ -677,8 +677,8 @@ pub trait Coro<I, Y, R>: Sized {
     /// itself to completion using its own yielded values, rather than needing
     /// an external driver.
     ///
-    /// Of course this is not possible without an initial value to start the
-    /// proess. But once the coroutine has yielded a value, it can be resumed
+    /// Of course, this is not possible without an initial value to start the
+    /// process. But once the coroutine has yielded a value, it can be resumed
     /// with that value, yield a new value, resume with that, and so on, until
     /// it returns.
     ///
@@ -713,12 +713,12 @@ pub trait Coro<I, Y, R>: Sized {
         }
     }
 
-    /// Create an iterator over the values yielded by this coroutine, which
-    /// iterates lazily and in-place.
+    /// Creates a lazy, in-place iterator over the values yielded by this
+    /// coroutine.
     ///
     /// In order for the iterator type to be the same for each state of the
-    /// coroutine, the coroutine must be a fixed-point coroutine, i.e. the
-    /// `Next` associated type must be `Self`.
+    /// coroutine, the coroutine must be a fixed-point coroutine (i.e.,
+    /// `Self::Next` is `Self`).
     ///
     /// TODO: it should be possible to implement `into_iter()` for all
     /// coroutines, not just fixed-point ones. The idea would be to use an enum

@@ -20,25 +20,25 @@ where
 
 /// Creates a coroutine from a function that returns a `Suspend`.
 ///
-/// This is the most straightforward way to implement a `Coro` without manually
+/// This is the most straightforward way to implement `Coro` without manually
 /// implementing the trait for your own data type.
 ///
-/// Using `from_fn()` exclusively to define a coroutine guarantees that the
-/// entire state machine of the coroutine is known at compile time, and that the
-/// state machine can only proceed in the correct order. Each iteration of the
-/// coroutine has a unique type with a `Next` associated type in its `Coro`
-/// implementation that points to the next state.
-///  
-/// This function is used as an implementation detail in many combinators, but
-/// it is often preferable to use those functions and combinators, such as
-/// `yield_with()`, and `recursive()` to implement coroutines.
+/// Using `from_fn()` exclusively to define a coroutine guarantees its entire
+/// state machine is known at compile time and can only proceed in the correct
+/// order. Each iteration of such a coroutine has a unique type whose `Coro`
+/// implementation (specifically, its `Next` associated type) points to the
+/// next state.
+///
+/// This function is an implementation detail in many combinators. However,
+/// it's often preferable to use higher-level functions and combinators like
+/// `yield_with()` and `recursive()` to implement coroutines.
 ///
 /// # Examples
 ///
 /// ```rust
 /// use cocoro::{from_fn, Coro, Returned, Void, Yield};
 ///
-/// // A coroutine that yields 3, 2, 1, and thn returns with "Blastoff!"
+/// // A coroutine that yields 3, 2, 1, and then returns with "Blastoff!"
 /// #[rustfmt::skip]
 /// let countdown = from_fn(|()| {
 ///     Yield(3, from_fn(|()| {

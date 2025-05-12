@@ -1,17 +1,18 @@
-/// A trait that is implemented by every type, with an associated type that
-/// is the type itself. This is used in trait bounds in generic functions to
-/// specify that some generic type parameter is the same type as some other
-/// generic type parameter.
+/// A trait implemented by all types, where `Self::Type` is `Self`.
 ///
-/// In particular, this is used by `returns()` and `yields()` combinators on
-/// the `Coro` trait to allow the user to specify the return type or yield type
-/// of a coroutine when type annotations on function parameters or return types
-/// cannot be used to constrain a coroutine that is generic over yield or
-/// return types. For example, `just_yields(10i32)` implements `Coro<i32, R, I>`
-/// for all possible `R` and `I`, but `just_yields(10i32).returns::<i32>()` will
-/// be treated as a `Coro<i32, i32, I>`, and the mechanism by which the type
-/// provided to `returns()` is propagated to the `Coro` implementation is by
-/// using the `Is` trait.
+/// This is used in trait bounds in generic functions to specify that a
+/// generic type parameter is the same as another, effectively aiding type
+/// inference or specialization.
+///
+/// For example, the `Coro::returns()` and `Coro::yields()` combinators use `Is`
+/// to allow users to explicitly set a coroutine's yield or return type.
+/// This is useful when type annotations on function parameters or return
+/// types are insufficient to constrain a coroutine generic over its yield or
+/// return types. For instance, `just_yield(10i32)` implements
+/// `Coro<I, i32, R>` for any input `I` and any return type `R`. Calling
+/// `just_yield(10i32).returns::<()>()` would result in a coroutine of type
+/// `impl Coro<I, i32, ()>`. The `Is` trait is part of the mechanism that
+/// propagates the specified type (e.g., `()`) to the `Coro` implementation.
 pub trait Is {
     type Type;
 }
