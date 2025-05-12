@@ -4,11 +4,11 @@ use crate::fixed_point::FixedPointCoro;
 use crate::flatten::FlattenImpl;
 use crate::map_return::MapReturn;
 use crate::map_yield::MapYield;
-use crate::map_yield_while::TryMapYield;
 use crate::metaprogramming::Is;
 use crate::suspend::Suspend;
 use crate::suspended::Suspended;
 use crate::void::Void;
+use crate::from_control_flow;
 use crate::zip::Zip;
 use core::ops::ControlFlow;
 use Suspend::{Return, Yield};
@@ -493,27 +493,55 @@ pub trait Coro<I, Y, R>: Sized {
     /// return with a value, the result of the function is `ControlFlow` instead
     /// of `Option`, where the "break" type of the `ControlFlow` must be the
     /// same type as the coroutine's return type.
-    fn map_yield_while<Y2, F>(self, f: F) -> impl Coro<I, Y2, R>
-    where
-        F: FnMut(Y) -> ControlFlow<R, Y2>,
-    {
-        TryMapYield::new(self, f)
-    }
-
     /// Creates a coroutine that yields the first `n` elements from this
     /// coroutine. It then returns `None` if `n` elements were yielded. If the
     /// original coroutine yields fewer than `n` elements, the new coroutine
     /// will yield all of them and then return `Some` containing the return
     /// value of the original coroutine.
+    ///
+    /// The resulting coroutine's return type is `Option<R>`. If `n` elements
+    /// are yielded, it returns `None`. If the original coroutine finishes
+    /// before `n` elements are yielded, it returns `Some(r)` where `r` is the
+    /// return value of the original coroutine.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use cocoro::{Coro, Suspend::*, Void, yield_with, from_fn};
+    ///
+    /// // Taking from an infinite sequence
+    /// let mut i = 0;
+    /// let coro_infinite = yield_with(move |()| {
+    ///     i += 1;
+    ///     i
+    /// })
+    /// .map_return(|_: Void| "finished"); // Dummy return type
+    ///
+    /// let mut taken_from_infinite = coro_infinite.take(3);
+    /// taken_from_infinite = taken_from_infinite.assert_yields(1, ());
+    /// taken_from_infinite = taken_from_infinite.assert_yields(2, ());
+    /// taken_from_infinite = taken_from_infinite.assert_yields(3, ());
+    /// taken_from_infinite.assert_returns(None, ()); // Returns None as 3 elements were taken
+    ///
+    /// // Taking from a finite sequence that finishes early
+    /// let coro_finite = from_fn(|()| Yield(1, from_fn(|()| Yield(2, from_fn(|()| Return("done early"))))));
+    ///
+    /// let mut taken_from_finite = coro_finite.take(5); // Attempt to take 5
+    /// taken_from_finite = taken_from_finite.assert_yields(1, ());
+    /// taken_from_finite = taken_from_finite.assert_yields(2, ());
+    /// // The underlying coroutine returned "done early" before 5 elements were taken
+    /// taken_from_finite.assert_returns(Some("done early"), ());
+    /// ```
     fn take(self, mut n: usize) -> impl Coro<I, Y, Option<R>> {
-        self.map_return(Some).map_yield_while(move |y| {
+        let f_take = move |y: Y| { // Explicitly typed y for clarity
             if n == 0 {
                 ControlFlow::Break(None)
             } else {
                 n -= 1;
                 ControlFlow::Continue(y)
             }
-        })
+        };
+        self.map_return(Some).compose(from_control_flow(f_take))
     }
 
     /// Sends the values yielded from `self` into `other` as inputs, and yields

@@ -436,7 +436,6 @@ mod just_return;
 mod just_yield;
 mod map_return;
 mod map_yield;
-mod map_yield_while;
 mod metaprogramming;
 mod recursive;
 mod suspend;
@@ -444,6 +443,7 @@ mod suspended;
 mod void;
 mod yield_with;
 mod zip;
+pub mod from_control_flow;
 
 pub use coro::Coro;
 pub use fixed_point::FixedPointCoro;
@@ -459,6 +459,7 @@ pub use suspend::Suspend;
 pub use suspended::Suspended;
 pub use void::Void;
 pub use yield_with::yield_with;
+pub use from_control_flow::from_control_flow;
 
 /// `Yield` and `Return` are imported into the crate root namespace because
 /// they are used so often. Do not confuse these enum variants with the
