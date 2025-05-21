@@ -6,7 +6,7 @@ type RecursiveFn<'a, I, Y, R> =
     dyn Fn(Recursive<'a, I, Y, R>, I) -> Suspend<Y, R, Recursive<'a, I, Y, R>>;
 
 pub struct Recursive<'a, I, Y, R>(&'a RecursiveFn<'a, I, Y, R>);
-impl<'a, I, Y, R> Coro<I, Y, R> for Recursive<'a, I, Y, R> {
+impl<I, Y, R> Coro<I, Y, R> for Recursive<'_, I, Y, R> {
     type Next = Self;
     type Suspend = Suspend<Y, R, Self>;
     fn resume(self, input: I) -> Self::Suspend {
