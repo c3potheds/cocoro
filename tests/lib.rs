@@ -202,3 +202,73 @@ fn test_weave_cps_with_flat_map() {
     let winner = weave_cps(flat_mapped, competitor, (), TakeFirst);
     assert_eq!(winner, "flat_mapped");
 }
+
+// Regression tests for flat_map and weave_cps interaction
+
+#[test]
+fn test_complex_flat_map_compilation() {
+    // Ensures complex flat_map coroutines compile (regression test for
+    // FlattenImpl visitor pattern)
+    from_control_flow(|x: i32| {
+        if x > 10 {
+            ControlFlow::Break("done")
+        } else {
+            ControlFlow::Continue(x + 1)
+        }
+    })
+    .flat_map(|_: &str| just_return("flat_mapped"))
+    .assert_yields(2, 1)
+    .assert_yields(3, 2)
+    .assert_yields(4, 3)
+    .assert_yields(5, 4)
+    .assert_yields(6, 5)
+    .assert_yields(7, 6)
+    .assert_yields(8, 7)
+    .assert_yields(9, 8)
+    .assert_yields(10, 9)
+    .assert_yields(11, 10)
+    .assert_returns("flat_mapped", 11);
+}
+
+#[test]
+fn test_complex_weave_cps_without_flat_map() {
+    // Ensures complex coroutines work with weave_cps when not using flat_map
+    let c1 = from_control_flow(|x: i32| {
+        if x > 10 {
+            ControlFlow::Break("c1")
+        } else {
+            ControlFlow::Continue(x + 1)
+        }
+    });
+
+    let c2 = from_control_flow(|x: i32| {
+        if x > 5 {
+            ControlFlow::Break("c2")
+        } else {
+            ControlFlow::Continue(x + 2)
+        }
+    });
+
+    let winner = weave_cps(c1, c2, 1, {
+        struct TakeFirst;
+        impl WeaveConsumer<i32, i32, &'static str, &'static str> for TakeFirst {
+            type Output = &'static str;
+            fn on_left<B: Coro<i32, i32, &'static str>>(
+                self,
+                result: &'static str,
+                _: B,
+            ) -> &'static str {
+                result
+            }
+            fn on_right<A: Coro<i32, i32, &'static str>>(
+                self,
+                result: &'static str,
+                _: A,
+            ) -> &'static str {
+                result
+            }
+        }
+        TakeFirst
+    });
+    assert_eq!(winner, "c2");
+}
