@@ -24,3 +24,7 @@ repository = "https://github.com/c3potheds/cocoro"
 
 [dependencies]
 either = "1.15"
+
+[[example]]
+name = "csv_parser"
+path = "examples/csv_parser.rs"
