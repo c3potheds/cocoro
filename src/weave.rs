@@ -1,4 +1,8 @@
-use crate::{suspended::Suspended, FixedPointCoro};
+use core::marker::PhantomData;
+
+use crate::suspended::SuspendedVisitor;
+// use crate::yield_with;
+use crate::{suspended::Suspended, Coro, FixedPointCoro};
 use either::Either;
 
 /// Weaves two fixed-point coroutines together bidirectionally, feeding the
@@ -176,11 +180,11 @@ use either::Either;
 /// }
 ///
 /// // Since the data stream never returns, the filter will always finish first
-/// let data_stream = data_stream();
-/// let Either::Right((item, data_stream)) = weave(data_stream, find_first_large(), ());
+/// let c = data_stream();
+/// let Either::Right((item, c)) = weave(c, find_first_large(), ());
 /// assert_eq!(item, 12);  // First item > 10 in the sequence
 /// // And you can do it again with the remaining data stream:
-/// let Either::Right((item, _)) = weave(data_stream, find_first_large(), ());
+/// let Either::Right((item, _)) = weave(c, find_first_large(), ());
 /// assert_eq!(item, 15);  // Next item > 10 in the remaining sequence
 /// ```
 ///
@@ -243,4 +247,157 @@ where
         },
         Return(r1) => Left((r1, coro_b)),
     }
+}
+
+/// A consumer that handles the result of a bidirectional coroutine weaving.
+///
+/// This trait allows handling both possible outcomes of [`weave_cps`] without
+/// requiring the remainder coroutines to be the same concrete type. The
+/// consumer is called exactly once with either:
+/// - `on_left(r1, remaining_b)` if the first coroutine returned first
+/// - `on_right(r2, remaining_a)` if the second coroutine returned first
+///
+/// Since the methods consume `self`, the consumer can only be used once,
+/// allowing it to safely move captured data into either branch.
+pub trait WeaveConsumer<I, Y, R1, R2> {
+    type Output;
+
+    /// Called when the first coroutine returns first.
+    /// Receives the return value and the remaining second coroutine.
+    fn on_left<B: Coro<Y, I, R2>>(self, r1: R1, remaining_b: B)
+        -> Self::Output;
+
+    /// Called when the second coroutine returns first.
+    /// Receives the return value and the remaining first coroutine.
+    fn on_right<A: Coro<I, Y, R1>>(
+        self,
+        r2: R2,
+        remaining_a: A,
+    ) -> Self::Output;
+}
+
+/// Continuation-passing style version of [`weave`] that doesn't require
+/// fixed-point coroutines.
+///
+/// This function executes bidirectional composition between two coroutines
+/// and passes the result to a consumer. Unlike [`weave`], this version can
+/// work with any coroutines (not just `FixedPointCoro`) because the consumer
+/// is polymorphic over the concrete types of remainder coroutines.
+///
+/// # Examples
+///
+/// ## Racing algorithms with CPS flexibility
+///
+/// ```rust
+/// use cocoro::{from_control_flow, weave_cps, Coro, WeaveConsumer};
+/// use core::ops::ControlFlow;
+///
+/// // Consumer that returns the winning result
+/// struct TakeWinner;
+/// impl WeaveConsumer<i32, i32, &'static str, &'static str> for TakeWinner {
+///     type Output = &'static str;
+///
+///     fn on_left<B: Coro<i32, i32, &'static str>>(
+///         self,
+///         result: &'static str,
+///         _: B,
+///     ) -> &'static str {
+///         result // Doubler won
+///     }
+///
+///     fn on_right<A: Coro<i32, i32, &'static str>>(
+///         self,
+///         result: &'static str,
+///         _: A,
+///     ) -> &'static str {
+///         result // Incrementer won
+///     }
+/// }
+///
+/// // Algorithm 1: Double until > 50, then return name
+/// let doubler = from_control_flow(|x: i32| {
+///     let next = x * 2;
+///     if next > 50 {
+///         ControlFlow::Break("doubler")
+///     } else {
+///         ControlFlow::Continue(next)
+///     }
+/// });
+///
+/// // Algorithm 2: Add 7 until > 50, then return name
+/// let incrementer = from_control_flow(|x: i32| {
+///     let next = x + 7;
+///     if next > 50 {
+///         ControlFlow::Break("incrementer")
+///     } else {
+///         ControlFlow::Continue(next)
+///     }
+/// });
+///
+/// // Race starting from 5: doubler (5→10→20→40→80)
+/// // vs incrementer (5→12→19→26→33→40→47→54)
+/// let winner = weave_cps(doubler, incrementer, 5, TakeWinner);
+/// assert_eq!(winner, "doubler"); // Doubler reaches >50 in fewer steps
+/// ```
+pub fn weave_cps<A, B, I, Y, R1, R2, C>(
+    coro_a: A,
+    coro_b: B,
+    input: I,
+    consumer: C,
+) -> C::Output
+where
+    A: Coro<I, Y, R1>,
+    B: Coro<Y, I, R2>,
+    C: WeaveConsumer<I, Y, R1, R2>,
+{
+    // Use the visitor pattern instead of `into_enum()` to avoid a Rust
+    // internal compiler error when recursively expanding the
+    // `FlattenImpl::Next` associated type when using coroutines derived from
+    // `flatten()` with `weave_cps()`.
+    struct VisitA<R2, B, C>(B, C, PhantomData<R2>);
+    impl<I, Y, R1, R2, A, B, C> SuspendedVisitor<I, Y, R1, A> for VisitA<R2, B, C>
+    where
+        A: Coro<I, Y, R1>,
+        B: Coro<Y, I, R2>,
+        C: WeaveConsumer<I, Y, R1, R2>,
+    {
+        type Out = C::Output;
+
+        fn on_yield(self, y: Y, next_a: A) -> Self::Out {
+            let Self(coro_b, consumer, _) = self;
+            coro_b
+                .resume(y)
+                .visit(VisitB(next_a, consumer, PhantomData))
+        }
+
+        fn on_return(self, r1: R1) -> Self::Out {
+            let Self(coro_b, consumer, _) = self;
+            consumer.on_left(r1, coro_b)
+        }
+    }
+
+    struct VisitB<R1, A, C>(A, C, PhantomData<R1>);
+    impl<I, Y, R1, R2, A, B, C> SuspendedVisitor<Y, I, R2, B> for VisitB<R1, A, C>
+    where
+        A: Coro<I, Y, R1>,
+        B: Coro<Y, I, R2>,
+        C: WeaveConsumer<I, Y, R1, R2>,
+    {
+        type Out = C::Output;
+
+        fn on_yield(self, i: I, next_b: B) -> Self::Out {
+            let Self(coro_a, consumer, _) = self;
+            coro_a
+                .resume(i)
+                .visit(VisitA(next_b, consumer, PhantomData))
+        }
+
+        fn on_return(self, r2: R2) -> Self::Out {
+            let Self(coro_a, consumer, _) = self;
+            consumer.on_right(r2, coro_a)
+        }
+    }
+    coro_a
+        .resume(input)
+        .visit(VisitA(coro_b, consumer, PhantomData))
 }
