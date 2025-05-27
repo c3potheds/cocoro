@@ -3,6 +3,8 @@
 // The cocoro crate is `no_std`, but this test crate may exercise integrations
 // with `std` features, such as collecting into `Vec`s.
 
+use std::ops::ControlFlow;
+
 use cocoro::*;
 
 fn iota() -> impl FixedPointCoro<(), i32, Void> {
@@ -100,4 +102,103 @@ fn join_right_is_empty() {
     .assert_yields("a2", ())
     .assert_yields("a3", ())
     .assert_returns(("A", "B"), ());
+}
+
+#[test]
+fn test_weave_cps_basic() {
+    struct TakeWinner;
+    impl WeaveConsumer<i32, i32, &'static str, &'static str> for TakeWinner {
+        type Output = &'static str;
+
+        fn on_left<B: Coro<i32, i32, &'static str>>(
+            self,
+            result: &'static str,
+            _: B,
+        ) -> &'static str {
+            result
+        }
+
+        fn on_right<A: Coro<i32, i32, &'static str>>(
+            self,
+            result: &'static str,
+            _: A,
+        ) -> &'static str {
+            result
+        }
+    }
+
+    // Simple race between two algorithms
+    let doubler = from_control_flow(|x: i32| {
+        let next = x * 2;
+        if next > 50 {
+            ControlFlow::Break("doubler")
+        } else {
+            ControlFlow::Continue(next)
+        }
+    });
+
+    let incrementer = from_control_flow(|x: i32| {
+        let next = x + 7;
+        if next > 50 {
+            ControlFlow::Break("incrementer")
+        } else {
+            ControlFlow::Continue(next)
+        }
+    });
+
+    let winner = weave_cps(doubler, incrementer, 5, TakeWinner);
+    assert_eq!(winner, "doubler");
+}
+
+// Tests for weave_cps with flatten coroutines to confirm ICE fix
+#[test]
+fn test_weave_cps_with_flatten() {
+    struct TakeWinner;
+    impl WeaveConsumer<(), (), i32, i32> for TakeWinner {
+        type Output = i32;
+        fn on_left<B: Coro<(), (), i32>>(self, result: i32, _: B) -> i32 {
+            result
+        }
+        fn on_right<A: Coro<(), (), i32>>(self, result: i32, _: A) -> i32 {
+            result
+        }
+    }
+
+    // Test flatten coroutine with weave_cps
+    let flattened = just_return(just_return(100)).flatten();
+    let simple = just_return(150);
+
+    let winner = weave_cps(flattened, simple, (), TakeWinner);
+    assert_eq!(winner, 100);
+}
+
+#[test]
+fn test_weave_cps_with_flat_map() {
+    struct TakeFirst;
+    impl WeaveConsumer<(), (), &'static str, &'static str> for TakeFirst {
+        type Output = &'static str;
+        fn on_left<B: Coro<(), (), &'static str>>(
+            self,
+            result: &'static str,
+            _: B,
+        ) -> &'static str {
+            result
+        }
+        fn on_right<A: Coro<(), (), &'static str>>(
+            self,
+            result: &'static str,
+            _: A,
+        ) -> &'static str {
+            result
+        }
+    }
+
+    // Test flat_map coroutine (which uses FlattenImpl internally) with weave_cps
+    // Use simpler coroutines to avoid deep recursion in flat_map
+    let flat_mapped =
+        just_return("outer").flat_map(|_: &str| just_return("flat_mapped"));
+    let competitor = just_return("competitor");
+
+    let winner = weave_cps(flat_mapped, competitor, (), TakeFirst);
+    assert_eq!(winner, "flat_mapped");
 }
