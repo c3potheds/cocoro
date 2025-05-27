@@ -442,6 +442,7 @@ mod recursive;
 mod suspend;
 mod suspended;
 mod void;
+mod weave;
 mod yield_with;
 mod zip;
 
@@ -459,6 +460,7 @@ pub use recursive::recursive;
 pub use suspend::Suspend;
 pub use suspended::Suspended;
 pub use void::Void;
+pub use weave::weave;
 pub use yield_with::yield_with;
 
 /// `Yield` and `Return` are imported into the crate root namespace because
