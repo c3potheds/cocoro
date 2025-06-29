@@ -59,3 +59,11 @@ Due to generic design over `I`, `Y`, `R` parameters, type annotations are often 
 ### Dependencies
 - `either = "1.11"` - Only external dependency
 - Uses `core::` instead of `std::` for no-std compatibility
+
+## Conventions
+
+- Generic parameters should be declared in topological order. If one parameter
+  "depends on" another parameter, the dependent parameter should appear later in
+  the list of parameters than the independent parameter.
+- The parameter order for input, yield, and return types for `Coro` traits and
+  implementations should be `I`, `Y`, `R`.
