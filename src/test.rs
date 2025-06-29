@@ -147,7 +147,7 @@ fn test_from_control_flow_non_trivial_types() {
                 num: input_struct.num + counter,
             })
         } else {
-            ControlFlow::Break(format!("Final count: {}", counter))
+            ControlFlow::Break(format!("Final count: {counter}"))
         }
     });
 
