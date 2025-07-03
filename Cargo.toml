@@ -26,5 +26,17 @@ repository = "https://github.com/c3potheds/cocoro"
 either = "1.15"
 
 [[example]]
+name = "calculator"
+path = "examples/calculator.rs"
+
+[[example]]
 name = "csv_parser"
 path = "examples/csv_parser.rs"
+
+[[example]]
+name = "simple_weave"
+path = "examples/simple_weave.rs"
+
+[[example]]
+name = "sexpr_parser"
+path = "examples/sexpr_parser.rs"
