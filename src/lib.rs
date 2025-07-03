@@ -427,6 +427,7 @@ mod compose;
 mod contramap_input;
 mod coro;
 mod either;
+mod feed_with;
 mod fixed_point;
 mod flatten;
 pub mod from_control_flow;

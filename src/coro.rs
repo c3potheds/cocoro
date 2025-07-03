@@ -1,5 +1,6 @@
 use crate::compose::Compose;
 use crate::contramap_input::ContramapInput;
+use crate::feed_with::FeedWith;
 use crate::fixed_point::FixedPointCoro;
 use crate::flatten::FlattenImpl;
 use crate::from_control_flow;
@@ -591,6 +592,121 @@ pub trait Coro<I, Y, R>: Sized {
         K2: Coro<Y, Y2, R>,
     {
         Compose::new(self, other)
+    }
+
+    /// Creates a coroutine that repeatedly processes this source coroutine by
+    /// taking its yielded values into a "processing" coroutine created by the
+    /// provided factory function for each input to the result coroutine.
+    ///
+    /// For each input to the resulting coroutine, it:
+    /// 1. Calls the factory function to get an initial input and a processing
+    ///    coroutine
+    /// 2. Uses `weave()` to compose the main coroutine with the processing
+    ///    coroutine
+    /// 3. Yields the result if the processing coroutine returns, or returns
+    ///    with the result and the current state of the processing coroutine
+    ///    if the main coroutine returns
+    ///
+    /// This enables powerful patterns like chunking, filtering, and "take many,
+    /// yield one" operations in a principled, generic way.
+    ///
+    /// The return type of the resulting coroutine is `(R, Other)`, not `R`,
+    /// because the source coroutine may return early while the processing
+    /// coroutine is in some intermediate state. Returning the `Other`
+    /// processing coroutine's state allows the caller to inspect or continue
+    /// the interrupted processing coroutine if needed. For example, you can
+    /// use `feed_with()` to compose a stream of tokens with a coroutine that
+    /// accumulates an expression tree, and an unexpected EOF could interrupt
+    /// the partial accumulation which the programmer may want to debug.
+    ///
+    /// # Type Signature (in Haskell notation)
+    /// ```haskell
+    /// feed_with :: (FixedPointCoro I Y R Src, FixedPointCoro Y I X Other)
+    ///           => Src -> (A -> (I, Other)) -> Coro<A, X, (R, Other)>
+    /// ```
+    ///
+    /// # Examples
+    ///
+    /// This combinator enables several powerful patterns:
+    ///
+    /// - **Chunking**: Take N items from a stream, yield them as batches
+    /// - **Filtering**: Process items until a condition is met, yield the
+    ///   result
+    /// - **Windowing**: Sliding window aggregation and processing
+    /// - **Take many, yield one**: Generic "collect and process" patterns
+    ///
+    /// ```rust
+    /// use cocoro::{
+    ///     from_control_flow, recursive, with_state, Coro, FixedPointCoro,
+    ///     IntoCoro, Return, Suspend, Yield,
+    /// };
+    /// use core::ops::ControlFlow::*;
+    ///
+    /// fn buffer_until_size(
+    ///     buffer: Vec<i32>,
+    ///     n: usize,
+    /// ) -> impl FixedPointCoro<i32, (), Vec<i32>> {
+    ///     with_state(
+    ///         (buffer, n),
+    ///         recursive(&|recur, ((mut buffer, n), input): ((Vec<_>, _), _)| {
+    ///             if buffer.len() < n {
+    ///                 buffer.push(input);
+    ///                 Yield(((buffer, n), ()), recur)
+    ///             } else {
+    ///                 Return(buffer)
+    ///             }
+    ///         }),
+    ///     )
+    /// }
+    ///
+    /// let chunks = [42]
+    ///     .into_iter()
+    ///     .cycle()
+    ///     .into_coro()
+    ///     .feed_with(|chunk_size| {
+    ///         let buffer = Vec::with_capacity(chunk_size);
+    ///         ((), buffer_until_size(buffer, chunk_size))
+    ///     })
+    ///     .map_return(|(buffer, _)| buffer);
+    /// chunks
+    ///     .assert_yields(vec![42, 42], 2)
+    ///     .assert_yields(vec![42, 42, 42], 3)
+    ///     .assert_yields(vec![42, 42, 42, 42], 4);
+    ///
+    /// // Filtering example: collect items until we find one matching a
+    /// // predicate.
+    /// fn filter_until<T>(
+    ///     predicate: impl Fn(&T) -> bool,
+    /// ) -> impl FixedPointCoro<T, (), T> {
+    ///     from_control_flow(move |input| {
+    ///         if predicate(&input) {
+    ///             Break(input)
+    ///         } else {
+    ///             Continue(())
+    ///         }
+    ///     })
+    /// }
+    ///
+    /// let filtered = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    ///     .into_iter()
+    ///     .into_coro()
+    ///     .feed_with(|threshold| ((), filter_until(move |&x| x > threshold)))
+    ///     .map_return(|((), _)| ());
+    /// filtered
+    ///     .assert_yields(6, 5) // First number > 5
+    ///     .assert_yields(8, 7) // First number > 7
+    ///     .assert_yields(10, 9); // First number > 9
+    /// ```
+    ///
+    /// Both the main coroutine and the processors created by the factory must
+    /// be `FixedPointCoro`, and the result is also `FixedPointCoro`.
+    fn feed_with<A, X, Other, F>(self, f: F) -> FeedWith<Self, F, Y>
+    where
+        Self: FixedPointCoro<I, Y, R>,
+        F: FnMut(A) -> (I, Other),
+        Other: FixedPointCoro<Y, I, X>,
+    {
+        FeedWith::new(self, f)
     }
 
     /// Drives this coroutine with default input values until it returns. It
