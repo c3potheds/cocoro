@@ -260,20 +260,15 @@ where
 /// Since the methods consume `self`, the consumer can only be used once,
 /// allowing it to safely move captured data into either branch.
 pub trait WeaveConsumer<I, Y, R1, R2> {
-    type Output;
+    type Out;
 
     /// Called when the first coroutine returns first.
     /// Receives the return value and the remaining second coroutine.
-    fn on_left<B: Coro<Y, I, R2>>(self, r1: R1, remaining_b: B)
-        -> Self::Output;
+    fn on_left<B: Coro<Y, I, R2>>(self, r1: R1, remaining_b: B) -> Self::Out;
 
     /// Called when the second coroutine returns first.
     /// Receives the return value and the remaining first coroutine.
-    fn on_right<A: Coro<I, Y, R1>>(
-        self,
-        r2: R2,
-        remaining_a: A,
-    ) -> Self::Output;
+    fn on_right<A: Coro<I, Y, R1>>(self, r2: R2, remaining_a: A) -> Self::Out;
 }
 
 /// Continuation-passing style version of [`weave`] that doesn't require
@@ -294,22 +289,22 @@ pub trait WeaveConsumer<I, Y, R1, R2> {
 ///
 /// // Consumer that returns the winning result
 /// struct TakeWinner;
-/// impl WeaveConsumer<i32, i32, &'static str, &'static str> for TakeWinner {
-///     type Output = &'static str;
+/// impl<'a> WeaveConsumer<i32, i32, &'a str, &'a str> for TakeWinner {
+///     type Out = &'a str;
 ///
-///     fn on_left<B: Coro<i32, i32, &'static str>>(
+///     fn on_left<B: Coro<i32, i32, &'a str>>(
 ///         self,
-///         result: &'static str,
+///         result: &'a str,
 ///         _: B,
-///     ) -> &'static str {
+///     ) -> &'a str {
 ///         result // Doubler won
 ///     }
 ///
-///     fn on_right<A: Coro<i32, i32, &'static str>>(
+///     fn on_right<A: Coro<i32, i32, &'a str>>(
 ///         self,
-///         result: &'static str,
+///         result: &'a str,
 ///         _: A,
-///     ) -> &'static str {
+///     ) -> &'a str {
 ///         result // Incrementer won
 ///     }
 /// }
@@ -344,7 +339,7 @@ pub fn weave_cps<A, B, I, Y, R1, R2, C>(
     coro_b: B,
     input: I,
     consumer: C,
-) -> C::Output
+) -> C::Out
 where
     A: Coro<I, Y, R1>,
     B: Coro<Y, I, R2>,
@@ -361,7 +356,7 @@ where
         B: Coro<Y, I, R2>,
         C: WeaveConsumer<I, Y, R1, R2>,
     {
-        type Out = C::Output;
+        type Out = C::Out;
 
         fn on_yield(self, y: Y, next_a: A) -> Self::Out {
             let Self(coro_b, consumer, _) = self;
@@ -383,7 +378,7 @@ where
         B: Coro<Y, I, R2>,
         C: WeaveConsumer<I, Y, R1, R2>,
     {
-        type Out = C::Output;
+        type Out = C::Out;
 
         fn on_yield(self, i: I, next_b: B) -> Self::Out {
             let Self(coro_a, consumer, _) = self;
