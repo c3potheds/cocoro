@@ -108,7 +108,7 @@ fn join_right_is_empty() {
 fn test_weave_cps_basic() {
     struct TakeWinner;
     impl WeaveConsumer<i32, i32, &'static str, &'static str> for TakeWinner {
-        type Output = &'static str;
+        type Out = &'static str;
 
         fn on_left<B: Coro<i32, i32, &'static str>>(
             self,
@@ -155,7 +155,7 @@ fn test_weave_cps_basic() {
 fn test_weave_cps_with_flatten() {
     struct TakeWinner;
     impl WeaveConsumer<(), (), i32, i32> for TakeWinner {
-        type Output = i32;
+        type Out = i32;
         fn on_left<B: Coro<(), (), i32>>(self, result: i32, _: B) -> i32 {
             result
         }
@@ -176,7 +176,7 @@ fn test_weave_cps_with_flatten() {
 fn test_weave_cps_with_flat_map() {
     struct TakeFirst;
     impl WeaveConsumer<(), (), &'static str, &'static str> for TakeFirst {
-        type Output = &'static str;
+        type Out = &'static str;
         fn on_left<B: Coro<(), (), &'static str>>(
             self,
             result: &'static str,
@@ -252,7 +252,7 @@ fn test_complex_weave_cps_without_flat_map() {
     let winner = weave_cps(c1, c2, 1, {
         struct TakeFirst;
         impl WeaveConsumer<i32, i32, &'static str, &'static str> for TakeFirst {
-            type Output = &'static str;
+            type Out = &'static str;
             fn on_left<B: Coro<i32, i32, &'static str>>(
                 self,
                 result: &'static str,
