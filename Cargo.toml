@@ -1,6 +1,6 @@
 [package]
 name = "cocoro"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["C-3PO the Dragon Slayer"]
 description = "A more type-safe take on Rust stackless coroutines"
 edition = "2024"
