@@ -26,7 +26,7 @@ use core::ops::ControlFlow;
 /// the coroutine after it has returned.
 ///
 /// Contrast this with `Iterator`, which lets you call `next()` as many
-/// times as you want, even after it has returned `None`. Implementers of
+/// times as you want, even after it has returned `None`. Implementors of
 /// `Iterator` are expected to return `None` every time after they have once
 /// returned `None`, but there is no way to enforce this in the type system.
 /// Meanwhile, consumers of `Iterator`s tend not to test for cases where the
@@ -587,7 +587,7 @@ pub trait Coro<I, Y, R>: Sized {
     ///     .assert_yields(10, ())
     ///     .assert_yields(15, ());
     /// ```
-    fn compose<Y2, K2>(self, other: K2) -> impl Coro<I, Y2, R>
+    fn compose<Y2, K2>(self, other: K2) -> Compose<I, Y, Self, K2>
     where
         K2: Coro<Y, Y2, R>,
     {
