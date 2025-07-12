@@ -5,6 +5,7 @@ use Suspend::*;
 use core::marker::PhantomData;
 use core::ops::ControlFlow;
 
+#[derive(Clone)]
 pub struct FromControlFlow<F, I, Y, R> {
     f: F,
     _marker: PhantomData<(I, Y, R)>,
