@@ -30,6 +30,23 @@ use crate::coro::Coro;
 pub unsafe trait FixedPointCoro<I, Y, R>:
     Coro<I, Y, R, Next = Self>
 {
+    /// This method is a no-op, but is useful for compile-time debugging to
+    /// ensure that the type is indeed a fixed-point coroutine. If you have a
+    /// complex pipeline of combinators like `map_yield()` or `compose()`, and
+    /// for some reason the final type is not `FixedPointCoro` as you expect,
+    /// you can insert `.fixed_point()` calls in between the combinators to
+    /// see where the property is lost.
+    ///
+    /// If you attempt to call this on a non-fixed-point coroutine, the compiler
+    /// will raise an error looking like this:
+    ///
+    /// ```text
+    ///  error[E0599]: the method `fixed_point` exists for opaque type
+    /// `impl Coro<I, Y, R>`, but its trait bounds were not satisfied
+    /// ```
+    fn fixed_point(self) -> Self {
+        self
+    }
 }
 
 /// `FixedPointCoro` is implemented automatically for all coroutines whose
