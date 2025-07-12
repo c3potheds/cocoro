@@ -4,7 +4,7 @@
 // parsing pipeline that handles tokenization and AST construction separately,
 // with full error handling and information preservation.
 
-use cocoro::{weave, Coro, Return, Suspend, Yield};
+use cocoro::{Coro, Return, Suspend, Yield, weave};
 use either::Either;
 use std::fmt;
 

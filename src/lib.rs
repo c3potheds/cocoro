@@ -119,7 +119,7 @@
 //! closure:
 //!
 //! ```rust
-//! use cocoro::{yield_with, Coro, Void, Yield};
+//! use cocoro::{Coro, Void, Yield, yield_with};
 //! let mut i = 0;
 //! let _: Option<Void> = yield_with(|()| {
 //!     i += 1;
@@ -201,7 +201,7 @@
 //! One could have written the same example using closures:
 //!
 //! ```rust
-//! use cocoro::{from_fn, Coro, Returned, Suspended, Void, Yielded};
+//! use cocoro::{Coro, Returned, Suspended, Void, Yielded, from_fn};
 //! #[derive(Debug, PartialEq, Eq)]
 //! struct Blastoff;
 //! #[rustfmt::skip]
@@ -454,15 +454,15 @@ pub use from_control_flow::from_control_flow;
 pub use from_fn::from_fn;
 pub use into_coro::IntoCoro;
 pub use join::join;
-pub use just_return::just_return;
 pub use just_return::Returned;
-pub use just_yield::just_yield;
+pub use just_return::just_return;
 pub use just_yield::Yielded;
+pub use just_yield::just_yield;
 pub use recursive::recursive;
 pub use suspend::Suspend;
 pub use suspended::Suspended;
 pub use void::Void;
-pub use weave::{weave, weave_cps, WeaveConsumer};
+pub use weave::{WeaveConsumer, weave, weave_cps};
 pub use with_state::with_state;
 pub use yield_with::yield_with;
 

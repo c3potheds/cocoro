@@ -6,7 +6,7 @@
 // 3. Elegant trailing input detection
 // 4. Bidirectional composition patterns
 
-use cocoro::{weave, Coro, Return, Suspend, Yield};
+use cocoro::{Coro, Return, Suspend, Yield, weave};
 use either::Either;
 use std::fmt;
 

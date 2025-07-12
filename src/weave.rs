@@ -2,7 +2,7 @@ use core::marker::PhantomData;
 
 use crate::suspended::SuspendedVisitor;
 // use crate::yield_with;
-use crate::{suspended::Suspended, Coro, FixedPointCoro};
+use crate::{Coro, FixedPointCoro, suspended::Suspended};
 use either::Either;
 
 /// Weaves two fixed-point coroutines together bidirectionally, feeding the
@@ -41,7 +41,7 @@ use either::Either;
 /// ## Producer-consumer with backpressure
 ///
 /// ```rust
-/// use cocoro::{from_control_flow, weave, yield_with, FixedPointCoro, Void};
+/// use cocoro::{FixedPointCoro, Void, from_control_flow, weave, yield_with};
 /// use core::ops::ControlFlow;
 /// use either::Either;
 ///
@@ -79,7 +79,7 @@ use either::Either;
 /// ## Request-response protocol
 ///
 /// ```rust
-/// use cocoro::{from_control_flow, weave, FixedPointCoro};
+/// use cocoro::{FixedPointCoro, from_control_flow, weave};
 /// use core::ops::ControlFlow;
 /// use either::Either;
 ///
@@ -153,7 +153,7 @@ use either::Either;
 /// ## Filtering with early termination
 ///
 /// ```rust
-/// use cocoro::{from_control_flow, weave, yield_with, FixedPointCoro, Void};
+/// use cocoro::{FixedPointCoro, Void, from_control_flow, weave, yield_with};
 /// use core::ops::ControlFlow;
 /// use either::Either;
 ///
@@ -172,9 +172,9 @@ use either::Either;
 /// fn find_first_large() -> impl FixedPointCoro<i32, (), i32> {
 ///     from_control_flow(move |item: i32| {
 ///         if item > 10 {
-///             ControlFlow::Break(item)  // Found it!
+///             ControlFlow::Break(item) // Found it!
 ///         } else {
-///             ControlFlow::Continue(())  // Keep searching
+///             ControlFlow::Continue(()) // Keep searching
 ///         }
 ///     })
 /// }
@@ -182,16 +182,16 @@ use either::Either;
 /// // Since the data stream never returns, the filter will always finish first
 /// let c = data_stream();
 /// let Either::Right((item, c)) = weave(c, find_first_large(), ());
-/// assert_eq!(item, 12);  // First item > 10 in the sequence
+/// assert_eq!(item, 12); // First item > 10 in the sequence
 /// // And you can do it again with the remaining data stream:
 /// let Either::Right((item, _)) = weave(c, find_first_large(), ());
-/// assert_eq!(item, 15);  // Next item > 10 in the remaining sequence
+/// assert_eq!(item, 15); // Next item > 10 in the remaining sequence
 /// ```
 ///
 /// ## Predicate-based filtering
 ///
 /// ```rust
-/// use cocoro::{from_control_flow, weave, yield_with, FixedPointCoro, Void};
+/// use cocoro::{FixedPointCoro, Void, from_control_flow, weave, yield_with};
 /// use core::ops::ControlFlow;
 /// use either::Either;
 ///
@@ -207,8 +207,8 @@ use either::Either;
 /// }
 ///
 /// // Collector that gathers words starting with 'a' until it has 3
-/// fn collect_a_words(
-/// ) -> impl FixedPointCoro<&'static str, (), Vec<&'static str>> {
+/// fn collect_a_words()
+/// -> impl FixedPointCoro<&'static str, (), Vec<&'static str>> {
 ///     let mut collected = Vec::new();
 ///     from_control_flow(move |word: &str| {
 ///         if word.starts_with('a') {
@@ -284,7 +284,7 @@ pub trait WeaveConsumer<I, Y, R1, R2> {
 /// ## Racing algorithms with CPS flexibility
 ///
 /// ```rust
-/// use cocoro::{from_control_flow, weave_cps, Coro, WeaveConsumer};
+/// use cocoro::{Coro, WeaveConsumer, from_control_flow, weave_cps};
 /// use core::ops::ControlFlow;
 ///
 /// // Consumer that returns the winning result

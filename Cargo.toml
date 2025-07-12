@@ -3,7 +3,7 @@ name = "cocoro"
 version = "0.1.0"
 authors = ["C-3PO the Dragon Slayer"]
 description = "A more type-safe take on Rust stackless coroutines"
-edition = "2021"
+edition = "2024"
 license-file = "LICENSE"
 keywords = [
     "coroutine",

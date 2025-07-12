@@ -1,7 +1,7 @@
+use crate::FixedPointCoro;
 use crate::coro::Coro;
 use crate::suspend::Suspend;
 use crate::weave::weave;
-use crate::FixedPointCoro;
 use core::marker::PhantomData;
 use either::Either;
 

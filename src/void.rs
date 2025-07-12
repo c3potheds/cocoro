@@ -14,11 +14,11 @@ use crate::suspended::SuspendedVisitor;
 /// `Void`, and coroutines that never yield as having a yield type of `Void`.
 ///
 /// ```rust
+/// use cocoro::Coro;
+/// use cocoro::Void;
 /// use cocoro::from_fn;
 /// use cocoro::just_return;
 /// use cocoro::just_yield;
-/// use cocoro::Coro;
-/// use cocoro::Void;
 ///
 /// #[derive(Clone, Copy)]
 /// struct Foo;
