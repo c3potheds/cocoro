@@ -27,8 +27,8 @@ where
     type Next = Either<FlattenImpl<Y, Outer::Next, Inner>, Inner::Next>;
     type Suspend = Suspend<Y, R, Self::Next>;
     fn resume(self, input: I) -> Self::Suspend {
-        use either::{Left, Right};
         use Suspend::{Return, Yield};
+        use either::{Left, Right};
 
         let Self { outer, .. } = self;
 

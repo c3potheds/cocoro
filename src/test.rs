@@ -82,8 +82,8 @@ fn yield_cumulative_length_of_inputs() {
 
 #[test]
 fn test_from_control_flow_simple_yield() {
-    use crate::from_control_flow;
     use crate::Coro;
+    use crate::from_control_flow;
     use core::ops::ControlFlow::Continue;
 
     from_control_flow(|x| Continue(x * 2))
@@ -95,8 +95,8 @@ fn test_from_control_flow_simple_yield() {
 
 #[test]
 fn test_from_control_flow_yield_then_break() {
-    use crate::from_control_flow;
     use crate::Coro;
+    use crate::from_control_flow;
     use core::ops::ControlFlow;
 
     let mut count = 0;
@@ -117,8 +117,8 @@ fn test_from_control_flow_yield_then_break() {
 
 #[test]
 fn test_from_control_flow_immediate_break() {
-    use crate::from_control_flow;
     use crate::Coro;
+    use crate::from_control_flow;
     use core::ops::ControlFlow::Break;
 
     // Specify Continue type for ControlFlow when it's not used.
@@ -128,8 +128,8 @@ fn test_from_control_flow_immediate_break() {
 
 #[test]
 fn test_from_control_flow_non_trivial_types() {
-    use crate::from_control_flow;
     use crate::Coro;
+    use crate::from_control_flow;
     use core::ops::ControlFlow;
 
     #[derive(Debug, PartialEq, Clone)]

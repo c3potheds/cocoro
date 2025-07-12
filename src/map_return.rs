@@ -1,8 +1,8 @@
 use crate::coro::Coro;
 use crate::suspend::Suspend;
 use crate::suspended::Suspended;
-use core::marker::PhantomData;
 use Suspend::*;
+use core::marker::PhantomData;
 
 pub struct MapReturn<R, K, F> {
     coro: K,

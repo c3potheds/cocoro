@@ -5,10 +5,10 @@
 // S-expressions are ideal for demonstrating coroutine composition because
 // of their simple, recursive structure.
 
-use cocoro::recursive;
 use cocoro::FixedPointCoro;
 use cocoro::Suspended;
-use cocoro::{weave, Coro, Return, Suspend, Yield};
+use cocoro::recursive;
+use cocoro::{Coro, Return, Suspend, Yield, weave};
 use either::Either;
 use either::Either::Left;
 use either::Either::Right;

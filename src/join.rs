@@ -1,8 +1,8 @@
 use either::Either;
 
+use crate::Suspended;
 use crate::coro::Coro;
 use crate::suspend::Suspend;
-use crate::Suspended;
 
 struct JoinL<K1, K2> {
     k1: K1,

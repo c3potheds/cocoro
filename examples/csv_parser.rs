@@ -16,7 +16,7 @@
 
 extern crate alloc;
 use alloc::{string::String, vec::Vec};
-use cocoro::{from_control_flow, Coro, Return, Suspended, Yield};
+use cocoro::{Coro, Return, Suspended, Yield, from_control_flow};
 use core::ops::ControlFlow;
 
 /// Represents a parsed CSV record

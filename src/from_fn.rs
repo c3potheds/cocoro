@@ -36,7 +36,7 @@ where
 /// # Examples
 ///
 /// ```rust
-/// use cocoro::{from_fn, Coro, Returned, Void, Yield};
+/// use cocoro::{Coro, Returned, Void, Yield, from_fn};
 ///
 /// // A coroutine that yields 3, 2, 1, and then returns with "Blastoff!"
 /// #[rustfmt::skip]

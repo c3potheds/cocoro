@@ -11,8 +11,8 @@ use crate::suspend::Suspend;
 use crate::suspended::Suspended;
 use crate::void::Void;
 use crate::zip::Zip;
-use core::ops::ControlFlow;
 use Suspend::{Return, Yield};
+use core::ops::ControlFlow;
 
 /// A coroutine that can be resumed with an input value of type `I`, returning
 /// a suspended state that either "yields" a value of type `Y` or "returns" a
@@ -106,7 +106,7 @@ pub trait Coro<I, Y, R>: Sized {
     /// # Examples
     ///
     /// ```rust
-    /// use cocoro::{just_return, Coro, Void};
+    /// use cocoro::{Coro, Void, just_return};
     ///
     /// just_return(10).yields::<Void>().assert_returns(10, ());
     /// ```
@@ -161,7 +161,7 @@ pub trait Coro<I, Y, R>: Sized {
     /// # Examples
     ///
     /// ```rust
-    /// use cocoro::{yield_with, Coro, Void};
+    /// use cocoro::{Coro, Void, yield_with};
     ///
     /// let mut i = 0;
     /// yield_with(|_| {
@@ -194,7 +194,7 @@ pub trait Coro<I, Y, R>: Sized {
     /// # Examples
     ///
     /// ```rust
-    /// use cocoro::{yield_with, Coro, Void};
+    /// use cocoro::{Coro, Void, yield_with};
     ///
     /// let mut i = 0;
     /// yield_with(|()| {
@@ -238,7 +238,7 @@ pub trait Coro<I, Y, R>: Sized {
     /// # Examples
     ///
     /// ```rust
-    /// use cocoro::{just_return, Coro, Void};
+    /// use cocoro::{Coro, Void, just_return};
     ///
     /// just_return(10)
     ///     .yields::<Void>()
@@ -269,7 +269,7 @@ pub trait Coro<I, Y, R>: Sized {
     /// # Examples
     ///
     /// ```rust
-    /// use cocoro::{yield_with, Coro, Void};
+    /// use cocoro::{Coro, Void, yield_with};
     ///
     /// let words = ["foo", "bar", "baz"];
     /// let mut words_iter = words.iter().copied().cycle();
@@ -311,7 +311,7 @@ pub trait Coro<I, Y, R>: Sized {
     /// # Examples
     ///
     /// ```rust
-    /// use cocoro::{just_return, yield_with, Coro, Void};
+    /// use cocoro::{Coro, Void, just_return, yield_with};
     ///
     /// just_return(yield_with(|()| 10))
     ///     .flatten()
@@ -336,7 +336,7 @@ pub trait Coro<I, Y, R>: Sized {
     /// coroutine.
     ///
     /// ```rust
-    /// use cocoro::{yield_with, Coro, Void};
+    /// use cocoro::{Coro, Void, yield_with};
     ///
     /// fn iota() -> impl Coro<(), i32, Void> {
     ///     let mut i = 0;
@@ -374,7 +374,7 @@ pub trait Coro<I, Y, R>: Sized {
     /// like so:
     ///
     /// ```rust
-    /// use cocoro::{yield_with, Coro, Void};
+    /// use cocoro::{Coro, Void, yield_with};
     ///
     /// let mut i = 0;
     /// yield_with(|()| {
@@ -391,7 +391,7 @@ pub trait Coro<I, Y, R>: Sized {
     /// coroutine to drive it.
     ///
     /// ```rust
-    /// use cocoro::{yield_with, Coro, Void};
+    /// use cocoro::{Coro, Void, yield_with};
     /// let mut length = 0;
     /// yield_with(move |s: &str| {
     ///     length += s.len();
@@ -433,7 +433,7 @@ pub trait Coro<I, Y, R>: Sized {
     /// coroutine to drive it.
     ///
     /// ```rust
-    /// use cocoro::{yield_with, Coro, Void};
+    /// use cocoro::{Coro, Void, yield_with};
     ///
     /// let mut length = 0;
     /// yield_with(move |s: &str| {
@@ -509,7 +509,7 @@ pub trait Coro<I, Y, R>: Sized {
     ///
     /// ```rust
     /// use cocoro::{
-    ///     from_fn, just_return, yield_with, Coro, Returned, Suspend::*, Void,
+    ///     Coro, Returned, Suspend::*, Void, from_fn, just_return, yield_with,
     /// };
     ///
     /// // Taking from an infinite sequence.
@@ -562,7 +562,7 @@ pub trait Coro<I, Y, R>: Sized {
     /// # Examples
     ///
     /// ```rust
-    /// use cocoro::{just_yield, yield_with, Coro, Void};
+    /// use cocoro::{Coro, Void, just_yield, yield_with};
     ///
     /// fn iota() -> impl Coro<(), i32, Void> {
     ///     let mut i = 0;
@@ -637,8 +637,8 @@ pub trait Coro<I, Y, R>: Sized {
     ///
     /// ```rust
     /// use cocoro::{
-    ///     from_control_flow, recursive, with_state, Coro, FixedPointCoro,
-    ///     IntoCoro, Return, Suspend, Yield,
+    ///     Coro, FixedPointCoro, IntoCoro, Return, Suspend, Yield,
+    ///     from_control_flow, recursive, with_state,
     /// };
     /// use core::ops::ControlFlow::*;
     ///
@@ -718,7 +718,7 @@ pub trait Coro<I, Y, R>: Sized {
     /// # Examples
     ///
     /// ```rust
-    /// use cocoro::{yield_with, Coro, Void};
+    /// use cocoro::{Coro, Void, yield_with};
     ///
     /// let mut i = 0;
     /// let sum = yield_with(move |()| {
@@ -759,7 +759,7 @@ pub trait Coro<I, Y, R>: Sized {
     /// # Examples
     ///
     /// ```rust
-    /// use cocoro::{yield_with, Coro, Void};
+    /// use cocoro::{Coro, Void, yield_with};
     ///
     /// let mut i = 0;
     /// let mut j = 0;
@@ -786,7 +786,7 @@ pub trait Coro<I, Y, R>: Sized {
     /// 2. Use `contramap_input()` to change the input type.
     ///
     /// ```rust
-    /// use cocoro::{yield_with, Coro, Void};
+    /// use cocoro::{Coro, Void, yield_with};
     ///
     /// let mut i = 0;
     /// let mut j = 0;
@@ -836,14 +836,10 @@ pub trait Coro<I, Y, R>: Sized {
     /// # Examples
     ///
     /// ```rust
-    /// use cocoro::{recursive, Coro, Return, Void, Yield};
+    /// use cocoro::{Coro, Return, Void, Yield, recursive};
     ///
     /// let count_to_10 = recursive(&|rec, i| {
-    ///     if i < 10 {
-    ///         Yield(i + 1, rec)
-    ///     } else {
-    ///         Return(i)
-    ///     }
+    ///     if i < 10 { Yield(i + 1, rec) } else { Return(i) }
     /// });
     /// let count = count_to_10.bootstrap(0);
     /// assert_eq!(count, 10);
@@ -903,7 +899,7 @@ pub trait Coro<I, Y, R>: Sized {
     /// both coroutines as a tuple.
     ///
     /// ```rust
-    /// use cocoro::{yield_with, Coro, IntoCoro, Void};
+    /// use cocoro::{Coro, IntoCoro, Void, yield_with};
     ///
     /// let a = ["a1", "a2"].into_coro().map_return(|()| "A");
     /// let b = ["b1", "b2", "b3"].into_coro().map_return(|()| "B");
