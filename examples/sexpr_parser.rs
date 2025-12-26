@@ -5,14 +5,19 @@
 // S-expressions are ideal for demonstrating coroutine composition because
 // of their simple, recursive structure.
 
+use std::fmt;
+
+use cocoro::Coro;
 use cocoro::FixedPointCoro;
+use cocoro::Return;
+use cocoro::Suspend;
 use cocoro::Suspended;
+use cocoro::Yield;
 use cocoro::recursive;
-use cocoro::{Coro, Return, Suspend, Yield, weave};
+use cocoro::weave;
 use either::Either;
 use either::Either::Left;
 use either::Either::Right;
-use std::fmt;
 
 #[derive(Debug, Clone, PartialEq)]
 enum Token {
@@ -181,7 +186,9 @@ impl Coro<(), Token, Result<(), ParseError>> for Tokenizer<'_> {
 
     fn resume(self, _: ()) -> Self::Suspend {
         use ParseError::UnknownChar;
-        use Token::{Atom, LeftParen, RightParen};
+        use Token::Atom;
+        use Token::LeftParen;
+        use Token::RightParen;
         use Tokenizer::End;
         use Tokenizer::Input;
         match self {
@@ -293,7 +300,8 @@ impl Coro<Token, (), ParseError> for ExpectEnd {
 }
 
 fn parse_sexpr(input: &str) -> Result<SExpr, ParseError> {
-    use Either::{Left, Right};
+    use Either::Left;
+    use Either::Right;
 
     let tokenizer = Tokenizer::new(input);
     let parser = SExprParser::new();

@@ -1,9 +1,11 @@
+use core::marker::PhantomData;
+
+use either::Either;
+
 use crate::FixedPointCoro;
 use crate::coro::Coro;
 use crate::suspend::Suspend;
 use crate::weave::weave;
-use core::marker::PhantomData;
-use either::Either;
 
 pub struct FeedWith<C, F, Y> {
     src: C,
@@ -31,8 +33,10 @@ where
     type Suspend = Suspend<X, (R, C2), Self::Next>;
 
     fn resume(self, input: A) -> Self::Suspend {
-        use Either::{Left, Right};
-        use Suspend::{Return, Yield};
+        use Either::Left;
+        use Either::Right;
+        use Suspend::Return;
+        use Suspend::Yield;
         let Self { src, mut f, .. } = self;
         let (initial_input, processor) = f(input);
         match weave(src, processor, initial_input) {

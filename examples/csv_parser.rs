@@ -15,9 +15,15 @@
 //! Run with: `cargo run --example csv_parser`
 
 extern crate alloc;
-use alloc::{string::String, vec::Vec};
-use cocoro::{Coro, Return, Suspended, Yield, from_control_flow};
+use alloc::string::String;
+use alloc::vec::Vec;
 use core::ops::ControlFlow;
+
+use cocoro::Coro;
+use cocoro::Return;
+use cocoro::Suspended;
+use cocoro::Yield;
+use cocoro::from_control_flow;
 
 /// Represents a parsed CSV record
 #[derive(Debug, Clone, PartialEq)]
@@ -38,7 +44,8 @@ pub fn parse_csv(input: &str) -> impl Coro<(), CsvRecord, ()> + '_ {
     let mut in_quotes = false;
 
     from_control_flow(move |_: ()| {
-        use ControlFlow::{Break, Continue};
+        use ControlFlow::Break;
+        use ControlFlow::Continue;
         loop {
             let ch = match chars.next() {
                 Some(ch) => ch,

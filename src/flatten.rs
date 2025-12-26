@@ -1,8 +1,11 @@
+use core::marker::PhantomData;
+
+use either::Either;
+
 use crate::coro::Coro;
 use crate::suspend::Suspend;
-use crate::suspended::{Suspended, SuspendedVisitor};
-use core::marker::PhantomData;
-use either::Either;
+use crate::suspended::Suspended;
+use crate::suspended::SuspendedVisitor;
 
 pub struct FlattenImpl<Y, Outer, Inner> {
     outer: Outer,
@@ -27,8 +30,10 @@ where
     type Next = Either<FlattenImpl<Y, Outer::Next, Inner>, Inner::Next>;
     type Suspend = Suspend<Y, R, Self::Next>;
     fn resume(self, input: I) -> Self::Suspend {
-        use Suspend::{Return, Yield};
-        use either::{Left, Right};
+        use Suspend::Return;
+        use Suspend::Yield;
+        use either::Left;
+        use either::Right;
 
         let Self { outer, .. } = self;
 

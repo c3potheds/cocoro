@@ -6,9 +6,14 @@
 // 3. Elegant trailing input detection
 // 4. Bidirectional composition patterns
 
-use cocoro::{Coro, Return, Suspend, Yield, weave};
-use either::Either;
 use std::fmt;
+
+use cocoro::Coro;
+use cocoro::Return;
+use cocoro::Suspend;
+use cocoro::Yield;
+use cocoro::weave;
+use either::Either;
 
 #[derive(Debug, Clone, PartialEq)]
 enum Token {

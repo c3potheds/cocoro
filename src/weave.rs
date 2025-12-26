@@ -1,9 +1,10 @@
 use core::marker::PhantomData;
 
+use either::Either;
+
 use crate::suspended::SuspendedVisitor;
 // use crate::yield_with;
 use crate::{Coro, FixedPointCoro, suspended::Suspended};
-use either::Either;
 
 /// Weaves two fixed-point coroutines together bidirectionally, feeding the
 /// yields of one as inputs to the other until one of them returns.
@@ -41,8 +42,13 @@ use either::Either;
 /// ## Producer-consumer with backpressure
 ///
 /// ```rust
-/// use cocoro::{FixedPointCoro, Void, from_control_flow, weave, yield_with};
 /// use core::ops::ControlFlow;
+///
+/// use cocoro::FixedPointCoro;
+/// use cocoro::Void;
+/// use cocoro::from_control_flow;
+/// use cocoro::weave;
+/// use cocoro::yield_with;
 /// use either::Either;
 ///
 /// // Data producer that yields items when requested
@@ -79,8 +85,11 @@ use either::Either;
 /// ## Request-response protocol
 ///
 /// ```rust
-/// use cocoro::{FixedPointCoro, from_control_flow, weave};
 /// use core::ops::ControlFlow;
+///
+/// use cocoro::FixedPointCoro;
+/// use cocoro::from_control_flow;
+/// use cocoro::weave;
 /// use either::Either;
 ///
 /// #[derive(PartialEq, Debug)]
@@ -153,8 +162,13 @@ use either::Either;
 /// ## Filtering with early termination
 ///
 /// ```rust
-/// use cocoro::{FixedPointCoro, Void, from_control_flow, weave, yield_with};
 /// use core::ops::ControlFlow;
+///
+/// use cocoro::FixedPointCoro;
+/// use cocoro::Void;
+/// use cocoro::from_control_flow;
+/// use cocoro::weave;
+/// use cocoro::yield_with;
 /// use either::Either;
 ///
 /// // Stream of data items
@@ -191,8 +205,13 @@ use either::Either;
 /// ## Predicate-based filtering
 ///
 /// ```rust
-/// use cocoro::{FixedPointCoro, Void, from_control_flow, weave, yield_with};
 /// use core::ops::ControlFlow;
+///
+/// use cocoro::FixedPointCoro;
+/// use cocoro::Void;
+/// use cocoro::from_control_flow;
+/// use cocoro::weave;
+/// use cocoro::yield_with;
 /// use either::Either;
 ///
 /// // Source of strings
@@ -238,8 +257,11 @@ where
     A: FixedPointCoro<I, Y, R1>,
     B: FixedPointCoro<Y, I, R2>,
 {
-    use crate::{Return, Yield};
-    use Either::{Left, Right};
+    use Either::Left;
+    use Either::Right;
+
+    use crate::Return;
+    use crate::Yield;
     match coro_a.resume(initial_input).into_enum() {
         Yield(y, next_a) => match coro_b.resume(y).into_enum() {
             Yield(i, next_b) => weave(next_a, next_b, i),
@@ -284,8 +306,12 @@ pub trait WeaveConsumer<I, Y, R1, R2> {
 /// ## Racing algorithms with CPS flexibility
 ///
 /// ```rust
-/// use cocoro::{Coro, WeaveConsumer, from_control_flow, weave_cps};
 /// use core::ops::ControlFlow;
+///
+/// use cocoro::Coro;
+/// use cocoro::WeaveConsumer;
+/// use cocoro::from_control_flow;
+/// use cocoro::weave_cps;
 ///
 /// // Consumer that returns the winning result
 /// struct TakeWinner;

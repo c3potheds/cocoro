@@ -50,7 +50,11 @@ impl<I, Y, R> Coro<I, Y, R> for Recursive<'_, I, Y, R> {
 /// # Example
 ///
 /// ```rust
-/// use cocoro::{Coro, Return, Void, Yield, recursive};
+/// use cocoro::Coro;
+/// use cocoro::Return;
+/// use cocoro::Void;
+/// use cocoro::Yield;
+/// use cocoro::recursive;
 ///
 /// recursive(&|recur, n| Yield(n + 1, recur))
 ///     .returns::<Void>()

@@ -85,8 +85,12 @@ where
 /// let `with_state()` handle passing the state through the coroutine:
 ///
 /// ```rust
-/// use cocoro::{Coro, from_control_flow, with_state};
-/// use core::ops::ControlFlow::{Break, Continue};
+/// use core::ops::ControlFlow::Break;
+/// use core::ops::ControlFlow::Continue;
+///
+/// use cocoro::Coro;
+/// use cocoro::from_control_flow;
+/// use cocoro::with_state;
 ///
 /// // Fill up a buffer with the coroutine inputs until it reaches a specified
 /// // size, then return the buffer.

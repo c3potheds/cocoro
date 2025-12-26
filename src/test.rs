@@ -1,7 +1,9 @@
 extern crate alloc;
-use super::*;
 use alloc::format;
-use alloc::string::{String, ToString};
+use alloc::string::String;
+use alloc::string::ToString;
+
+use super::*;
 
 #[test]
 fn just_yield_i32() {
@@ -82,9 +84,10 @@ fn yield_cumulative_length_of_inputs() {
 
 #[test]
 fn test_from_control_flow_simple_yield() {
+    use core::ops::ControlFlow::Continue;
+
     use crate::Coro;
     use crate::from_control_flow;
-    use core::ops::ControlFlow::Continue;
 
     from_control_flow(|x| Continue(x * 2))
         .returns::<Void>()
@@ -95,9 +98,10 @@ fn test_from_control_flow_simple_yield() {
 
 #[test]
 fn test_from_control_flow_yield_then_break() {
+    use core::ops::ControlFlow;
+
     use crate::Coro;
     use crate::from_control_flow;
-    use core::ops::ControlFlow;
 
     let mut count = 0;
     let coro = from_control_flow(move |x: i32| {
@@ -117,9 +121,10 @@ fn test_from_control_flow_yield_then_break() {
 
 #[test]
 fn test_from_control_flow_immediate_break() {
+    use core::ops::ControlFlow::Break;
+
     use crate::Coro;
     use crate::from_control_flow;
-    use core::ops::ControlFlow::Break;
 
     // Specify Continue type for ControlFlow when it's not used.
     let coro = from_control_flow(|_x: ()| Break(42_i32)).yields::<Void>();
@@ -128,9 +133,10 @@ fn test_from_control_flow_immediate_break() {
 
 #[test]
 fn test_from_control_flow_non_trivial_types() {
+    use core::ops::ControlFlow;
+
     use crate::Coro;
     use crate::from_control_flow;
-    use core::ops::ControlFlow;
 
     #[derive(Debug, PartialEq, Clone)]
     struct MyStruct {

@@ -1,0 +1,15 @@
+# Consistent with Google style guide, fits on most default terminal windows
+# without wrapping.
+max_width = 80
+
+# The following are nightly-only features. Use `cargo +nightly fmt` to format.
+
+# This crate has a lot of example code in docstrings. This feature allows
+# `cargo +nightly fmt` to format them.
+format_code_in_doc_comments = true
+
+# Each name should be imported on its own line (which is nicer for git history).
+imports_granularity = "item"
+# Sort imports into groups. The "StdExternalCrate" ordering follows the "don't
+# look down" principle of topologically sorting elements.
+group_imports = "StdExternalCrate"

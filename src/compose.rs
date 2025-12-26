@@ -1,7 +1,8 @@
+use core::marker::PhantomData;
+
 use crate::coro::Coro;
 use crate::suspend::Suspend;
 use crate::suspended::Suspended;
-use core::marker::PhantomData;
 
 pub struct Compose<I, Y1, A, B> {
     a: A,
@@ -31,7 +32,8 @@ where
     type Next = Compose<I, Y1, A::Next, B::Next>;
     type Suspend = Suspend<Y2, R, Self::Next>;
     fn resume(self, input: I) -> Self::Suspend {
-        use Suspend::{Return, Yield};
+        use Suspend::Return;
+        use Suspend::Yield;
         let Compose { a, b, .. } = self;
         match a.resume(input).into_enum() {
             Yield(y, next) => match b.resume(y).into_enum() {

@@ -1,9 +1,11 @@
-use crate::coro::Coro;
-use crate::suspend::Suspend;
-use ControlFlow::*;
-use Suspend::*;
 use core::marker::PhantomData;
 use core::ops::ControlFlow;
+
+use ControlFlow::*;
+use Suspend::*;
+
+use crate::coro::Coro;
+use crate::suspend::Suspend;
 
 #[derive(Clone)]
 pub struct FromControlFlow<F, I, Y, R> {
@@ -28,8 +30,11 @@ pub struct FromControlFlow<F, I, Y, R> {
 /// # Examples
 ///
 /// ```rust
-/// use cocoro::{Coro, Void, from_control_flow};
 /// use core::ops::ControlFlow;
+///
+/// use cocoro::Coro;
+/// use cocoro::Void;
+/// use cocoro::from_control_flow;
 ///
 /// let mut countdown = 3;
 /// from_control_flow(move |input: i32| {

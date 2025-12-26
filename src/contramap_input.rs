@@ -1,8 +1,9 @@
+use Suspend::Return;
+use Suspend::Yield;
+
 use crate::coro::Coro;
 use crate::suspend::Suspend;
 use crate::suspended::Suspended;
-use Suspend::Return;
-use Suspend::Yield;
 
 pub struct ContramapInput<Src, F>(Src, F);
 impl<Src, F> ContramapInput<Src, F> {

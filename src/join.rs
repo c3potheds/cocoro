@@ -33,8 +33,10 @@ where
     type Next = Either<JoinR<K1::Next, K2>, JoinGotL<R1, K2::Next>>;
     type Suspend = Suspend<Y, (R1, R2), Self::Next>;
     fn resume(self, input: I) -> Self::Suspend {
-        use Either::{Left, Right};
-        use Suspend::{Return, Yield};
+        use Either::Left;
+        use Either::Right;
+        use Suspend::Return;
+        use Suspend::Yield;
         let JoinL { k1, k2 } = self;
         match k1.resume(input).into_enum() {
             Yield(y, k1) => Yield(y, Left(JoinR { k1, k2 })),
@@ -55,8 +57,10 @@ where
     type Next = Either<JoinL<K1, K2::Next>, JoinGotR<K1::Next, R2>>;
     type Suspend = Suspend<Y, (R1, R2), Self::Next>;
     fn resume(self, input: I) -> Self::Suspend {
-        use Either::{Left, Right};
-        use Suspend::{Return, Yield};
+        use Either::Left;
+        use Either::Right;
+        use Suspend::Return;
+        use Suspend::Yield;
         let JoinR { k1, k2 } = self;
         match k2.resume(input).into_enum() {
             Yield(y, k2) => Yield(y, Left(JoinL { k1, k2 })),
@@ -76,7 +80,8 @@ where
     type Next = JoinGotL<R1, K2::Next>;
     type Suspend = Suspend<Y, (R1, R2), Self::Next>;
     fn resume(self, input: I) -> Self::Suspend {
-        use Suspend::{Return, Yield};
+        use Suspend::Return;
+        use Suspend::Yield;
         let JoinGotL { r1, k2 } = self;
         match k2.resume(input).into_enum() {
             Yield(y, k2) => Yield(y, JoinGotL { r1, k2 }),
@@ -93,7 +98,8 @@ where
     type Next = JoinGotR<K1::Next, R2>;
     type Suspend = Suspend<Y, (R1, R2), Self::Next>;
     fn resume(self, input: I) -> Self::Suspend {
-        use Suspend::{Return, Yield};
+        use Suspend::Return;
+        use Suspend::Yield;
         let JoinGotR { k1, r2 } = self;
         match k1.resume(input).into_enum() {
             Yield(y, k1) => Yield(y, JoinGotR { k1, r2 }),

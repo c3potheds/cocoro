@@ -4,9 +4,14 @@
 // parsing pipeline that handles tokenization and AST construction separately,
 // with full error handling and information preservation.
 
-use cocoro::{Coro, Return, Suspend, Yield, weave};
-use either::Either;
 use std::fmt;
+
+use cocoro::Coro;
+use cocoro::Return;
+use cocoro::Suspend;
+use cocoro::Yield;
+use cocoro::weave;
+use either::Either;
 
 #[derive(Debug, Clone, PartialEq)]
 enum Token {
@@ -351,7 +356,8 @@ impl Coro<Token, (), ParseError> for ExpectEnd {
 }
 
 fn parse_expression(input: &str) -> Result<Expr, ParseError> {
-    use Either::{Left, Right};
+    use Either::Left;
+    use Either::Right;
     let lexer = Lexer::new(input);
     let parser = Parser::new();
 

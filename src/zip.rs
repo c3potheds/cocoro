@@ -18,7 +18,8 @@ where
     type Next = Zip<K1::Next, K2::Next>;
     type Suspend = Suspend<(Y1, Y2), R, Self::Next>;
     fn resume(self, input: (I1, I2)) -> Self::Suspend {
-        use Suspend::{Return, Yield};
+        use Suspend::Return;
+        use Suspend::Yield;
         let Zip(a, b) = self;
         let (i1, i2) = input;
         match a.resume(i1).into_enum() {

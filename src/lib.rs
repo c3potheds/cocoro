@@ -77,7 +77,9 @@
 //! Here's a coroutine that yields successive integers and never returns:
 //!
 //! ```rust
-//! use cocoro::{Coro, Suspended, Yielded};
+//! use cocoro::Coro;
+//! use cocoro::Suspended;
+//! use cocoro::Yielded;
 //!
 //! struct Counter(i32);
 //! impl Coro<(), i32, ()> for Counter {
@@ -119,7 +121,10 @@
 //! closure:
 //!
 //! ```rust
-//! use cocoro::{Coro, Void, Yield, yield_with};
+//! use cocoro::Coro;
+//! use cocoro::Void;
+//! use cocoro::Yield;
+//! use cocoro::yield_with;
 //! let mut i = 0;
 //! let _: Option<Void> = yield_with(|()| {
 //!     i += 1;
@@ -134,7 +139,12 @@
 //! ## Static-sized countdown
 //!
 //! ```rust
-//! use cocoro::{Coro, Returned, Suspend, Suspended, Void, Yielded};
+//! use cocoro::Coro;
+//! use cocoro::Returned;
+//! use cocoro::Suspend;
+//! use cocoro::Suspended;
+//! use cocoro::Void;
+//! use cocoro::Yielded;
 //!
 //! struct Three;
 //! struct Two;
@@ -201,7 +211,12 @@
 //! One could have written the same example using closures:
 //!
 //! ```rust
-//! use cocoro::{Coro, Returned, Suspended, Void, Yielded, from_fn};
+//! use cocoro::Coro;
+//! use cocoro::Returned;
+//! use cocoro::Suspended;
+//! use cocoro::Void;
+//! use cocoro::Yielded;
+//! use cocoro::from_fn;
 //! #[derive(Debug, PartialEq, Eq)]
 //! struct Blastoff;
 //! #[rustfmt::skip]
@@ -449,6 +464,14 @@ mod with_state;
 mod yield_with;
 mod zip;
 
+/// `Yield` and `Return` are imported into the crate root namespace because
+/// they are used so often. Do not confuse these enum variants with the
+/// `Yielded` and `Returned` structs.
+pub use Suspend::Return;
+/// `Yield` and `Return` are imported into the crate root namespace because
+/// they are used so often. Do not confuse these enum variants with the
+/// `Yielded` and `Returned` structs.
+pub use Suspend::Yield;
 pub use coro::Coro;
 pub use fixed_point::FixedPointCoro;
 pub use from_control_flow::from_control_flow;
@@ -464,14 +487,11 @@ pub use return_with::return_with;
 pub use suspend::Suspend;
 pub use suspended::Suspended;
 pub use void::Void;
-pub use weave::{WeaveConsumer, weave, weave_cps};
+pub use weave::WeaveConsumer;
+pub use weave::weave;
+pub use weave::weave_cps;
 pub use with_state::with_state;
 pub use yield_with::yield_with;
-
-/// `Yield` and `Return` are imported into the crate root namespace because
-/// they are used so often. Do not confuse these enum variants with the
-/// `Yielded` and `Returned` structs.
-pub use Suspend::{Return, Yield};
 
 #[cfg(test)]
 mod test;

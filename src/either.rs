@@ -1,10 +1,12 @@
+use Either::Left;
+use Either::Right;
+use Suspend::Return;
+use Suspend::Yield;
+use either::Either;
+
 use crate::coro::Coro;
 use crate::suspend::Suspend;
 use crate::suspended::Suspended;
-use Either::Left;
-use Either::Right;
-use Suspend::{Return, Yield};
-use either::Either;
 
 /// Implements the `Coro` trait for the `Either` type when both variants
 /// themselves implement `Coro` for the same input and output types.

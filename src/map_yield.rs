@@ -1,8 +1,10 @@
+use core::marker::PhantomData;
+
+use Suspend::*;
+
 use crate::coro::Coro;
 use crate::suspend::Suspend;
 use crate::suspended::Suspended;
-use Suspend::*;
-use core::marker::PhantomData;
 
 pub struct MapYield<Y, K, F> {
     coro: K,

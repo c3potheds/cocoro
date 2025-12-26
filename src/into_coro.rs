@@ -1,6 +1,8 @@
+use Suspend::Return;
+use Suspend::Yield;
+
 use crate::coro::Coro;
 use crate::suspend::Suspend;
-use Suspend::{Return, Yield};
 
 /// Implemented by types that can be converted into a coroutine.
 ///
