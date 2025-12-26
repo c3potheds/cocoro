@@ -2,9 +2,10 @@ use core::marker::PhantomData;
 
 use either::Either;
 
+use crate::Coro;
+use crate::FixedPointCoro;
+use crate::suspended::Suspended;
 use crate::suspended::SuspendedVisitor;
-// use crate::yield_with;
-use crate::{Coro, FixedPointCoro, suspended::Suspended};
 
 /// Weaves two fixed-point coroutines together bidirectionally, feeding the
 /// yields of one as inputs to the other until one of them returns.
