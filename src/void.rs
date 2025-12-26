@@ -44,6 +44,19 @@ use crate::suspended::SuspendedVisitor;
 #[derive(Debug, PartialEq, Eq)]
 pub enum Void {}
 
+impl Void {
+    /// Witness the impossibility of reaching this code.
+    ///
+    /// It's impossible to conjure a real instance of `Void`, so any function
+    /// that takes a `Void` instance as input is allowed to return any type `R`
+    /// because the function cannot actually be called at runtime. In generic
+    /// contexts where `Void` is substituted into an input parameter, it's safe
+    /// to call `.absurd()` on the `Void` instance to satisfy the type checker.
+    pub fn absurd<R>(self) -> R {
+        unreachable!()
+    }
+}
+
 impl<T, R, I> Suspended<T, R, I> for Void {
     type Next = Void;
     fn visit<X>(
