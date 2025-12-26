@@ -746,6 +746,62 @@ pub trait Coro<I, Y, R>: Sized {
         FeedWith::new(self, f)
     }
 
+    /// Drive the coroutine to completion, using the `driver` function to choose
+    /// the next input based on the yielded output. This will loop forever (and
+    /// probably overflow the stack) if the source coroutine yields infinitely.
+    ///
+    /// This is a more general version of `for_each()` that works for coroutines
+    /// with input parameters that don't implement `Default`.
+    ///
+    /// # Example 1: perform an action for each yielded value
+    ///
+    /// ```rust
+    /// use cocoro::Coro;
+    /// use cocoro::IntoCoro;
+    ///
+    /// [1, 2, 3, 4, 5]
+    ///     .into_iter()
+    ///     .into_coro()
+    ///     .drive((), |n| println!("{n}")); // Prints "1", "2", "3", "4", "5"
+    /// ```
+    ///
+    /// # Example 2: read a a buffer to completion
+    ///
+    /// ```rust
+    /// use core::ops::ControlFlow::*;
+    ///
+    /// use cocoro::Coro;
+    /// use cocoro::from_control_flow;
+    ///
+    /// // A coroutine whose input determines how many bytes to read from a
+    /// // buffer, and yields successive slices of the buffer based on the given
+    /// // sizes, until finally returning the last slice of the buffer.
+    /// fn chunkify(buffer: &[u8]) -> impl Coro<usize, &[u8], &[u8]> {
+    ///     let mut cursor = 0usize;
+    ///     let max = buffer.len();
+    ///     from_control_flow(move |bytes_to_read| {
+    ///         let prev = cursor;
+    ///         cursor += bytes_to_read;
+    ///         if cursor < max {
+    ///             Break(&buffer[prev..max])
+    ///         } else {
+    ///             Continue(&buffer[prev..cursor])
+    ///         }
+    ///     })
+    /// }
+    ///
+    /// chunkify("hello, world".as_bytes()).drive(5, |chunk| {
+    ///     println!("{chunk:?}");
+    ///     if chunk.contains(&b',') { 5 } else { 2 }
+    /// });
+    /// ```
+    fn drive(self, input: I, mut driver: impl FnMut(Y) -> I) -> R {
+        match self.resume(input).into_enum() {
+            Yield(y, n) => n.drive(driver(y), driver),
+            Return(r) => r,
+        }
+    }
+
     /// Drives this coroutine with default input values until it returns. It
     /// invokes the given function `f` for each yielded value. Finally, it
     /// returns the return value `R` of the original coroutine.
@@ -775,13 +831,10 @@ pub trait Coro<I, Y, R>: Sized {
         I: Default,
         F: FnMut(Y),
     {
-        match self.resume(Default::default()).into_enum() {
-            Yield(y, next) => {
-                f(y);
-                next.for_each(f)
-            }
-            Return(r) => r,
-        }
+        self.drive(Default::default(), |y| {
+            f(y);
+            Default::default()
+        })
     }
 
     /// Zips the yielded values of this coroutine with the yielded values of
