@@ -122,15 +122,15 @@
 //!
 //! ```rust
 //! use cocoro::Coro;
-//! use cocoro::Void;
 //! use cocoro::Yield;
+//! use cocoro::take;
 //! use cocoro::yield_with;
 //! let mut i = 0;
-//! let _: Option<Void> = yield_with(|()| {
+//! yield_with(|()| {
 //!     i += 1;
 //!     i
 //! })
-//! .take(10)
+//! .compose(take(10))
 //! .for_each(|n| {
 //!     println!("{}", n);
 //! });
@@ -445,7 +445,7 @@ mod either;
 mod feed_with;
 mod fixed_point;
 mod flatten;
-pub mod from_control_flow;
+mod from_control_flow;
 mod from_fn;
 mod into_coro;
 mod join;
@@ -458,6 +458,7 @@ mod recursive;
 mod return_with;
 mod suspend;
 mod suspended;
+mod take;
 mod void;
 mod weave;
 mod with_state;
@@ -486,6 +487,7 @@ pub use recursive::recursive;
 pub use return_with::return_with;
 pub use suspend::Suspend;
 pub use suspended::Suspended;
+pub use take::take;
 pub use void::Void;
 pub use weave::WeaveConsumer;
 pub use weave::weave;

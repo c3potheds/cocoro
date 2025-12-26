@@ -1,5 +1,3 @@
-use core::ops::ControlFlow;
-
 use Suspend::Return;
 use Suspend::Yield;
 
@@ -8,7 +6,6 @@ use crate::contramap_input::ContramapInput;
 use crate::feed_with::FeedWith;
 use crate::fixed_point::FixedPointCoro;
 use crate::flatten::FlattenImpl;
-use crate::from_control_flow;
 use crate::map_return::MapReturn;
 use crate::map_yield::MapYield;
 use crate::metaprogramming::Is;
@@ -354,9 +351,10 @@ pub trait Coro<I, Y, R>: Sized {
     /// ```rust
     /// use cocoro::Coro;
     /// use cocoro::Void;
+    /// use cocoro::take;
     /// use cocoro::yield_with;
     ///
-    /// fn iota() -> impl Coro<(), i32, Void> {
+    /// fn iota<R>() -> impl Coro<(), i32, R> {
     ///     let mut i = 0;
     ///     yield_with(move |()| {
     ///         i += 1;
@@ -364,7 +362,9 @@ pub trait Coro<I, Y, R>: Sized {
     ///     })
     /// }
     ///
-    /// let count_to_three_twice = iota().take(3).flat_map(|_| iota().take(3));
+    /// let count_to_three_twice = iota()
+    ///     .compose(take(3))
+    ///     .flat_map(|_| iota().compose(take(3)));
     /// count_to_three_twice
     ///     .assert_yields(1, ())
     ///     .assert_yields(2, ())
@@ -372,7 +372,7 @@ pub trait Coro<I, Y, R>: Sized {
     ///     .assert_yields(1, ())
     ///     .assert_yields(2, ())
     ///     .assert_yields(3, ())
-    ///     .assert_returns(None, ());
+    ///     .assert_returns((), ());
     /// ```
     fn flat_map<R2, K2, F>(self, f: F) -> impl Coro<I, Y, R2>
     where
@@ -456,7 +456,7 @@ pub trait Coro<I, Y, R>: Sized {
     ///
     /// ```rust
     /// use cocoro::Coro;
-    /// use cocoro::Void;
+    /// use cocoro::take;
     /// use cocoro::yield_with;
     ///
     /// let mut length = 0;
@@ -464,11 +464,10 @@ pub trait Coro<I, Y, R>: Sized {
     ///     length += s.len();
     ///     length
     /// })
-    /// .returns::<Void>()
-    /// .take(2)
+    /// .compose(take(2))
     /// .assert_yields(3, "foo")
     /// .assert_yields(6, "bar")
-    /// .assert_returns(None, "hello");
+    /// .assert_returns((), "hello");
     /// ```
     fn assert_returns(self, expected: R, input: I)
     where
@@ -505,73 +504,6 @@ pub trait Coro<I, Y, R>: Sized {
             Return(r) => r,
             Yield(_, _) => unreachable!(),
         }
-    }
-
-    /// Creates a coroutine that applies `f` to each value yielded from this
-    /// coroutine, and yields the result if `f` returns `ControlFlow::Continue`
-    /// and returns with the result if `f` returns `ControlFlow::Break`.
-    ///
-    /// When `try_trait_v2` is stabilized, expect this method to be extended to
-    /// work with closures that return any type that implements `Try`.
-    ///
-    /// This is similar to `Iterator::map_while()`, but because coroutines
-    /// return with a value, the result of the function is `ControlFlow` instead
-    /// of `Option`, where the "break" type of the `ControlFlow` must be the
-    /// same type as the coroutine's return type.
-    /// Creates a coroutine that yields the first `n` elements from this
-    /// coroutine. It then returns `None` if `n` elements were yielded. If the
-    /// original coroutine yields fewer than `n` elements, the new coroutine
-    /// will yield all of them and then return `Some` containing the return
-    /// value of the original coroutine.
-    ///
-    /// The resulting coroutine's return type is `Option<R>`. If `n` elements
-    /// are yielded, it returns `None`. If the original coroutine finishes
-    /// before `n` elements are yielded, it returns `Some(r)` where `r` is the
-    /// return value of the original coroutine.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use cocoro::Coro;
-    /// use cocoro::Returned;
-    /// use cocoro::Suspend::*;
-    /// use cocoro::Void;
-    /// use cocoro::from_fn;
-    /// use cocoro::just_return;
-    /// use cocoro::yield_with;
-    ///
-    /// // Taking from an infinite sequence.
-    /// let mut i = 0;
-    /// yield_with(move |()| {
-    ///     i += 1;
-    ///     i
-    /// })
-    /// .returns::<Void>()
-    /// .take(3)
-    /// .assert_yields(1, ())
-    /// .assert_yields(2, ())
-    /// .assert_yields(3, ())
-    /// .assert_returns(None, ()); // Returns None as 3 elements were taken
-    ///
-    /// // Taking from a finite sequence that finishes early.
-    /// from_fn(|()| Yield(1, from_fn(|()| Yield(2, just_return("done")))))
-    ///     .take(5)
-    ///     .assert_yields(1, ())
-    ///     .assert_yields(2, ())
-    ///     // The underlying coroutine returned "done" before 5
-    ///     // elements were taken
-    ///     .assert_returns(Some("done"), ());
-    /// ```
-    fn take(self, mut n: usize) -> impl Coro<I, Y, Option<R>> {
-        self.map_return(Some).compose(from_control_flow(move |y| {
-            use ControlFlow::*;
-            if n == 0 {
-                Break(None)
-            } else {
-                n -= 1;
-                Continue(y)
-            }
-        }))
     }
 
     /// Sends the values yielded from `self` into `other` as inputs, and yields
@@ -812,7 +744,7 @@ pub trait Coro<I, Y, R>: Sized {
     ///
     /// ```rust
     /// use cocoro::Coro;
-    /// use cocoro::Void;
+    /// use cocoro::take;
     /// use cocoro::yield_with;
     ///
     /// let mut i = 0;
@@ -820,8 +752,7 @@ pub trait Coro<I, Y, R>: Sized {
     ///     i += 1;
     ///     i
     /// })
-    /// .returns::<Void>()
-    /// .take(10)
+    /// .compose(take(52142))
     /// .for_each(|i| {
     ///     println!("{i}");
     /// });
@@ -948,10 +879,7 @@ pub trait Coro<I, Y, R>: Sized {
     where
         Self: Coro<Y, Y, R>,
     {
-        match self.resume(init).into_enum() {
-            Yield(y, next) => next.bootstrap(y),
-            Return(r) => r,
-        }
+        self.drive(init, |y| y)
     }
 
     /// Creates a lazy, in-place iterator over the values yielded by this

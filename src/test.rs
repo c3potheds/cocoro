@@ -1,9 +1,14 @@
 extern crate alloc;
+
 use alloc::format;
 use alloc::string::String;
 use alloc::string::ToString;
+use core::ops::ControlFlow;
+use core::ops::ControlFlow::*;
 
 use super::*;
+use crate::Coro;
+use crate::from_control_flow;
 
 #[test]
 fn just_yield_i32() {
@@ -84,11 +89,6 @@ fn yield_cumulative_length_of_inputs() {
 
 #[test]
 fn test_from_control_flow_simple_yield() {
-    use core::ops::ControlFlow::Continue;
-
-    use crate::Coro;
-    use crate::from_control_flow;
-
     from_control_flow(|x| Continue(x * 2))
         .returns::<Void>()
         .assert_yields(2, 1)
@@ -98,11 +98,6 @@ fn test_from_control_flow_simple_yield() {
 
 #[test]
 fn test_from_control_flow_yield_then_break() {
-    use core::ops::ControlFlow;
-
-    use crate::Coro;
-    use crate::from_control_flow;
-
     let mut count = 0;
     let coro = from_control_flow(move |x: i32| {
         use ControlFlow::*;
@@ -121,11 +116,6 @@ fn test_from_control_flow_yield_then_break() {
 
 #[test]
 fn test_from_control_flow_immediate_break() {
-    use core::ops::ControlFlow::Break;
-
-    use crate::Coro;
-    use crate::from_control_flow;
-
     // Specify Continue type for ControlFlow when it's not used.
     let coro = from_control_flow(|_x: ()| Break(42_i32)).yields::<Void>();
     coro.assert_returns(42, ());
@@ -133,11 +123,6 @@ fn test_from_control_flow_immediate_break() {
 
 #[test]
 fn test_from_control_flow_non_trivial_types() {
-    use core::ops::ControlFlow;
-
-    use crate::Coro;
-    use crate::from_control_flow;
-
     #[derive(Debug, PartialEq, Clone)]
     struct MyStruct {
         val: String,
@@ -180,43 +165,40 @@ fn test_from_control_flow_non_trivial_types() {
 #[test]
 fn test_take_fewer_than_available() {
     yield_with(|()| 1)
-        .returns::<Void>()
-        .take(3)
+        .compose(take(3))
         .assert_yields(1, ())
         .assert_yields(1, ())
         .assert_yields(1, ())
-        .assert_returns(None, ());
+        .assert_returns((), ());
 }
 
 #[test]
 fn test_take_more_than_available() {
     from_fn(|()| Yield(1, from_fn(|()| Yield(2, just_return("done")))))
-        .take(5)
+        .compose(take(5).map_return(|_| "break"))
         .assert_yields(1, ())
         .assert_yields(2, ())
-        .assert_returns(Some("done"), ());
+        .assert_returns("done", ());
 }
 
 #[test]
 fn test_take_zero_elements() {
-    yield_with(|()| 1)
-        .returns::<Void>()
-        .take(0)
-        .assert_returns(None, ());
+    yield_with(|()| 1).compose(take(0)).assert_returns((), ());
 }
 
 #[test]
 fn test_take_from_empty_coro_returns() {
     just_return("empty")
         .yields::<Void>()
-        .take(5)
-        .assert_returns(Some("empty"), ());
+        .compose(take(5).map_return(|_| "nonempty"))
+        .assert_returns("empty", ());
 }
 
 #[test]
 fn test_take_from_empty_coro_yields_nothing() {
     let coro = just_return("empty").yields::<Void>();
-    coro.take(5).assert_returns(Some("empty"), ());
+    coro.compose(take(5).map_return(|_| "nonempty"))
+        .assert_returns("empty", ());
 }
 
 #[test]
@@ -226,10 +208,9 @@ fn iota_take_3() {
         i += 1;
         i
     })
-    .returns::<Void>()
-    .take(3)
+    .compose(take(3))
     .assert_yields(1, ())
     .assert_yields(2, ())
     .assert_yields(3, ())
-    .assert_returns(None, ());
+    .assert_returns((), ());
 }

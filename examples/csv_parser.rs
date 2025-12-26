@@ -24,6 +24,7 @@ use cocoro::Return;
 use cocoro::Suspended;
 use cocoro::Yield;
 use cocoro::from_control_flow;
+use cocoro::take;
 
 /// Represents a parsed CSV record
 #[derive(Debug, Clone, PartialEq)]
@@ -175,21 +176,19 @@ Bob Johnson,35,Chicago
 
     // Example 4: Using take() combinator
     println!("Example 4: Using take() combinator to limit output:");
-    match parse_csv(csv_data)
-        .take(3) // Only take first 3 records
+    let result = parse_csv(csv_data)
+        .map_return(|r| format!("Original parser would have returned {r:?}"))
+        // Only take first 3 records
+        .compose(
+            take(3).map_return(|()| "Stopped after taking 3 records".into()),
+        )
         .for_each(|record| {
             println!(
                 "  Limited: Line {}: {:?}",
                 record.line_number, record.fields
             );
-        }) {
-        Some(original_result) => {
-            println!(
-                "  Original parser would have returned: {original_result:?}"
-            )
-        }
-        None => println!("  Stopped after taking 3 records"),
-    }
+        });
+    println!("{result}");
 }
 
 #[cfg(test)]
