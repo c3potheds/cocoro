@@ -56,7 +56,7 @@ pub enum Suspend<Y, R, N> {
 ```
 
 The `Yield` and `Return` variants are imported into the crate's root
-namespace, so they can be used withoutthe `Suspend::` prefix.
+namespace, so they can be used without the `Suspend::` prefix.
 
 In addition, the `Coro` trait provides a number of default combinators that
 should feel familiar to anyone working with `Iterator`, for example:
@@ -121,13 +121,13 @@ Using the `yield_with()` function, we can do the same thing as above with a
 closure:
 
 ```rust
-use cocoro::{yield_with, Coro, Void, Yield};
+use cocoro::{yield_with, Coro, take, Yield};
 let mut i = 0;
-let _: Option<Void> = yield_with(|()| {
+yield_with(|()| {
     i += 1;
     i
 })
-.take(10)
+.compose(take(10))
 .for_each(|n| {
     println!("{}", n);
 });
@@ -325,7 +325,7 @@ it does not try to describe the state machines of `gen` blocks. Instead,
 coroutines are hand-written or composed from combinators and closures that
 are not suspended.
 
-## Ok, but why not use `&mut self` as the reciver for `resume()`?
+## Ok, but why not use `&mut self` as the receiver for `resume()`?
 
 This is an experiment to try to express in the type system something that is
 implicit in the contract of types like `Iterator`, `Future`, and, yes,
@@ -375,7 +375,7 @@ in general.
 This is the secret sauce that allows `cocoro` coroutines to opt into
 statically deterministic state machines. The `Next` associated type of a
 coroutine is the type of the next state of the coroutine, and if every
-coroutine were to neecessarily return an enum, the compiler would have to
+coroutine were to necessarily return an enum, the compiler would have to
 insert a check on that enum's tag when matching the result.
 
 In particular, this lets `just_yield()` coroutines return a `Yielded` struct

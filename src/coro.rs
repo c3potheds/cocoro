@@ -567,9 +567,9 @@ pub trait Coro<I, Y, R>: Sized {
     /// 2. If a worker was started, use the initial input value and the worker
     ///    to `weave()` with this source coroutine
     /// 3. Yields the result if the worker coroutine returns, or passes the
-    ///    and the current state of the worker coroutine to the continuation if
-    ///    the source coroutine returns to determine what to do with the state
-    ///    of the interrupted worker
+    ///    current state of the worker coroutine to the continuation if the
+    ///    source coroutine returns to determine what to do with the state of
+    ///    the interrupted worker
     /// 4. The continuation provides a new coroutine for this coroutine to
     ///    "become", superseding the above behavior after the source coroutine
     ///    is finished
@@ -615,7 +615,7 @@ pub trait Coro<I, Y, R>: Sized {
     /// tokens (e.g. `Coro<(), Token, EOF>`) with workers that accumulate
     /// expression trees (e.g. `Coro<Token, (), Result<Ast, ParseError>>`),
     /// and an `EOF` may need to be handled by the continuation depending on
-    /// what state the worker, which might be in a state with unmatched
+    /// what state the worker is in, which might be a state with unmatched
     /// delimiters (which may cause a parse error), or yield the expression from
     /// the final tokens.
     ///
