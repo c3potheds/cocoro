@@ -439,13 +439,14 @@
 #![no_std]
 
 mod compose;
+mod continue_while;
 mod contramap_input;
 mod coro;
 mod either;
 mod feed_with;
 mod fixed_point;
 mod flatten;
-mod from_control_flow;
+pub mod from_control_flow;
 mod from_fn;
 mod into_coro;
 mod join;
@@ -473,6 +474,7 @@ pub use Suspend::Return;
 /// they are used so often. Do not confuse these enum variants with the
 /// `Yielded` and `Returned` structs.
 pub use Suspend::Yield;
+pub use continue_while::continue_while;
 pub use coro::Coro;
 pub use fixed_point::FixedPointCoro;
 pub use from_control_flow::from_control_flow;
