@@ -5,7 +5,7 @@ use crate::Suspend::Yield;
 use crate::Suspended;
 
 pub struct WithState<S, C> {
-    state: S,
+    pub state: S,
     coro: C,
 }
 

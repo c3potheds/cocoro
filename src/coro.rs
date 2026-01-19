@@ -3,7 +3,6 @@ use Suspend::Yield;
 
 use crate::compose::Compose;
 use crate::contramap_input::ContramapInput;
-use crate::feed_with::FeedWith;
 use crate::fixed_point::FixedPointCoro;
 use crate::flatten::FlattenImpl;
 use crate::map_return::MapReturn;
@@ -558,45 +557,69 @@ pub trait Coro<I, Y, R>: Sized {
     }
 
     /// Creates a coroutine that repeatedly processes this source coroutine by
-    /// taking its yielded values into a "processing" coroutine created by the
-    /// provided factory function for each input to the result coroutine.
+    /// weaving it with the yielded values from the "processor" coroutine, which
+    /// yields "workers" that interact with this coroutine to produce values to
+    /// yield from the resulting coroutine.
     ///
     /// For each input to the resulting coroutine, it:
-    /// 1. Calls the factory function to get an initial input and a processing
-    ///    coroutine
-    /// 2. Uses `weave()` to compose the main coroutine with the processing
-    ///    coroutine
-    /// 3. Yields the result if the processing coroutine returns, or returns
-    ///    with the result and the current state of the processing coroutine
-    ///    if the main coroutine returns
+    /// 1. Resumes the processor coroutine to start a worker, or short-circuit
+    ///    and end processing
+    /// 2. If a worker was started, use the initial input value and the worker
+    ///    to `weave()` with this source coroutine
+    /// 3. Yields the result if the worker coroutine returns, or passes the
+    ///    and the current state of the worker coroutine to the continuation if
+    ///    the source coroutine returns to determine what to do with the state
+    ///    of the interrupted worker
+    /// 4. The continuation provides a new coroutine for this coroutine to
+    ///    "become", superseding the above behavior after the source coroutine
+    ///    is finished
     ///
     /// This enables powerful patterns like chunking, filtering, and "take many,
     /// yield one" operations in a principled, generic way.
     ///
-    /// The return type of the resulting coroutine is `(R, Other)`, not `R`,
-    /// because the source coroutine may return early while the processing
-    /// coroutine is in some intermediate state. Returning the `Other`
-    /// processing coroutine's state allows the caller to inspect or continue
-    /// the interrupted processing coroutine if needed. For example, you can
-    /// use `feed_with()` to compose a stream of tokens with a coroutine that
-    /// accumulates an expression tree, and an unexpected EOF could interrupt
-    /// the partial accumulation which the programmer may want to debug.
+    /// The processor coroutine yields worker coroutines, so it can be thought
+    /// of as a coroutine that yields coroutines. However, note that instead of
+    /// yielding coroutines directly, it yields a *suspension* of the worker
+    /// coroutine, which is either a `Yield` value containing the initial input
+    /// to the source coroutine and the worker, or a `Return` value containing
+    /// the `X` value to yield from the result coroutine without interacting
+    /// with the source coroutine.
     ///
-    /// # Type Signature (in Haskell notation)
-    /// ```haskell
-    /// feed_with :: (FixedPointCoro I Y R Src, FixedPointCoro Y I X Other)
-    ///           => Src -> (A -> (I, Other)) -> Coro<A, X, (R, Other)>
-    /// ```
+    /// The processor's input type `A` is the input type of the result coroutine
+    /// and can be used as a parameter to customize the worker for a chunk of
+    /// yield values from the coroutine. A processor may decide, based on the
+    /// input, to skip reading the source, in which case it can yield a returned
+    /// `X` value instead of yielding a yielded `I` with a worker, and that `X`
+    /// value will be yielded from the result coroutine directly. A processor
+    /// could also decide to return an `R` directly, completely short-circuiting
+    /// the entire result coroutine. Or, in the most common case, it chooses an
+    /// initial input for the source coroutine, creates a worker coroutine, and
+    /// yields a `Yield` with that input and worker.
     ///
-    /// # Examples
+    /// There are two ways for the result coroutine to return:
     ///
-    /// This combinator enables several powerful patterns:
+    /// 1. The source coroutine returns. This only happens while weaving with a
+    ///    worker coroutine, so the return value from the source and the state
+    ///    of the worker is passed to the continuation, which determines how to
+    ///    proceed (e.g. yield anything from the state of the worker before
+    ///    returning, or combining the return value with the state of the worker
+    ///    to produce a new return value).
+    /// 2. The processor returns directly, instead of spawning a worker. In this
+    ///    case the entire coroutine is short-circuited. If this happens, the
+    ///    continuation is not invoked, because there is no leftover worker that
+    ///    may contain anything else left to yield.
     ///
-    /// - **Chunking**: Take N items from a stream, yield them as batches
-    /// - **Filtering**: Process items until a condition is met, yield the
-    ///   result
-    /// - **Windowing**: Sliding window aggregation and processing
-    /// - **Take many, yield one**: Generic "collect and process" patterns
+    /// The continuation is used to transition from consuming the source
+    /// coroutine to processing the leftover intermediate state of the last
+    /// worker. For example, you can use `process()` to process a stream of
+    /// tokens (e.g. `Coro<(), Token, EOF>`) with workers that accumulate
+    /// expression trees (e.g. `Coro<Token, (), Result<Ast, ParseError>>`),
+    /// and an `EOF` may need to be handled by the continuation depending on
+    /// what state the worker, which might be in a state with unmatched
+    /// delimiters (which may cause a parse error), or yield the expression from
+    /// the final tokens.
+    ///
+    /// # Example
     ///
     /// ```rust
     /// use core::ops::ControlFlow::*;
@@ -604,43 +627,10 @@ pub trait Coro<I, Y, R>: Sized {
     /// use cocoro::Coro;
     /// use cocoro::FixedPointCoro;
     /// use cocoro::IntoCoro;
-    /// use cocoro::Return;
-    /// use cocoro::Suspend;
-    /// use cocoro::Yield;
+    /// use cocoro::Returned;
+    /// use cocoro::Yielded;
     /// use cocoro::from_control_flow;
-    /// use cocoro::recursive;
-    /// use cocoro::with_state;
-    ///
-    /// fn buffer_until_size(
-    ///     buffer: Vec<i32>,
-    ///     n: usize,
-    /// ) -> impl FixedPointCoro<i32, (), Vec<i32>> {
-    ///     with_state(
-    ///         (buffer, n),
-    ///         recursive(&|recur, ((mut buffer, n), input): ((Vec<_>, _), _)| {
-    ///             if buffer.len() < n {
-    ///                 buffer.push(input);
-    ///                 Yield(((buffer, n), ()), recur)
-    ///             } else {
-    ///                 Return(buffer)
-    ///             }
-    ///         }),
-    ///     )
-    /// }
-    ///
-    /// let chunks = [42]
-    ///     .into_iter()
-    ///     .cycle()
-    ///     .into_coro()
-    ///     .feed_with(|chunk_size| {
-    ///         let buffer = Vec::with_capacity(chunk_size);
-    ///         ((), buffer_until_size(buffer, chunk_size))
-    ///     })
-    ///     .map_return(|(buffer, _)| buffer);
-    /// chunks
-    ///     .assert_yields(vec![42, 42], 2)
-    ///     .assert_yields(vec![42, 42, 42], 3)
-    ///     .assert_yields(vec![42, 42, 42, 42], 4);
+    /// use cocoro::yield_with;
     ///
     /// // Filtering example: collect items until we find one matching a
     /// // predicate.
@@ -656,26 +646,46 @@ pub trait Coro<I, Y, R>: Sized {
     ///     })
     /// }
     ///
-    /// let filtered = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    ///     .into_iter()
-    ///     .into_coro()
-    ///     .feed_with(|threshold| ((), filter_until(move |&x| x > threshold)))
-    ///     .map_return(|((), _)| ());
+    /// /// Helper to create a simple processor that yields a worker for each input
+    /// fn process_simple<I: Default, A, W, R>(
+    ///     mut f: impl FnMut(A) -> W,
+    /// ) -> impl Coro<A, Yielded<I, W>, R> {
+    ///     yield_with(move |a| Yielded(Default::default(), f(a)))
+    /// }
+    ///
+    /// let filtered = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].into_coro().process(
+    ///     process_simple(|max| filter_until(move |&x| x > max)),
+    ///     // No need to yield anything from the worker; filter_until() is
+    ///     // stateless.
+    ///     |r: (), _| Returned(r),
+    /// );
     /// filtered
     ///     .assert_yields(6, 5) // First number > 5
     ///     .assert_yields(8, 7) // First number > 7
     ///     .assert_yields(10, 9); // First number > 9
     /// ```
     ///
-    /// Both the main coroutine and the processors created by the factory must
-    /// be `FixedPointCoro`, and the result is also `FixedPointCoro`.
-    fn feed_with<A, X, Other, F>(self, f: F) -> FeedWith<Self, F, Y>
+    /// For now, the source coroutine and the workers must be `FixedPointCoro`,
+    /// but the result is not necessarily `FixedPointCoro`. The source and
+    /// worker coroutines need to be `FixedPointCoro` for `weave()` to work, and
+    /// the `weave_cps()` function doesn't conserve the type of the worker
+    /// coroutine which needs to be passed to `cont`.
+    ///
+    /// It may be possible to guarantee that the result coroutine is fixed-point
+    /// if and only if the processor and `Finish` coroutines are also
+    /// fixed-point, but for now this is kept hidden from the type system.
+    fn process<A, X, Start, Worker, Transition>(
+        self,
+        processor: impl Coro<A, Start, R>,
+        cont: impl FnOnce(R, Worker) -> Transition,
+    ) -> impl Coro<A, X, R>
     where
         Self: FixedPointCoro<I, Y, R>,
-        F: FnMut(A) -> (I, Other),
-        Other: FixedPointCoro<Y, I, X>,
+        Worker: FixedPointCoro<Y, I, X>,
+        Start: Suspended<Y, I, X, Next = Worker>,
+        Transition: Suspended<A, X, R>,
     {
-        FeedWith::new(self, f)
+        crate::process::process(self, processor, cont)
     }
 
     /// Drive the coroutine to completion, using the `driver` function to choose
