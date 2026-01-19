@@ -54,7 +54,7 @@
 //! ```
 //!
 //! The `Yield` and `Return` variants are imported into the crate's root
-//! namespace, so they can be used withoutthe `Suspend::` prefix.
+//! namespace, so they can be used without the `Suspend::` prefix.
 //!
 //! In addition, the `Coro` trait provides a number of default combinators that
 //! should feel familiar to anyone working with `Iterator`, for example:
