@@ -733,10 +733,18 @@ pub trait Coro<I, Y, R>: Sized {
     ///     })
     /// }
     ///
-    /// chunkify("hello, world".as_bytes()).drive(5, |chunk| {
-    ///     println!("{chunk:?}");
+    /// let mut chunks = Vec::new();
+    /// let remainder = chunkify("hello, world".as_bytes()).drive(5, |chunk| {
+    ///     chunks.push(chunk);
     ///     if chunk.contains(&b',') { 5 } else { 2 }
     /// });
+    ///
+    /// // Verify the yielded chunks
+    /// assert_eq!(chunks.len(), 2);
+    /// assert_eq!(chunks[0], b"hello");  // First 5 bytes
+    /// assert_eq!(chunks[1], b", ");     // Next 2 bytes (no comma in "hello")
+    /// // The final chunk is returned, not yielded
+    /// assert_eq!(remainder, b"world");  // Last 5 bytes (comma in ", ")
     /// ```
     fn drive(self, input: I, mut driver: impl FnMut(Y) -> I) -> R {
         match self.resume(input).into_enum() {
