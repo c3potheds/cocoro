@@ -708,7 +708,7 @@ pub trait Coro<I, Y, R>: Sized {
     ///     .drive((), |n| println!("{n}")); // Prints "1", "2", "3", "4", "5"
     /// ```
     ///
-    /// # Example 2: read a a buffer to completion
+    /// # Example 2: read a buffer to completion
     ///
     /// ```rust
     /// use core::ops::ControlFlow::*;
@@ -726,9 +726,9 @@ pub trait Coro<I, Y, R>: Sized {
     ///         let prev = cursor;
     ///         cursor += bytes_to_read;
     ///         if cursor < max {
-    ///             Break(&buffer[prev..max])
-    ///         } else {
     ///             Continue(&buffer[prev..cursor])
+    ///         } else {
+    ///             Break(&buffer[prev..max])
     ///         }
     ///     })
     /// }
