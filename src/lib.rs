@@ -437,6 +437,7 @@
 // Tests for integrations with standard library APIs that use these features
 // should be put in the integratation tests in the `tests/` folder.
 #![no_std]
+#![cfg_attr(docsrs, feature(doc_notable_trait))]
 
 mod compose;
 mod continue_while;
@@ -475,7 +476,9 @@ pub use Suspend::Return;
 /// they are used so often. Do not confuse these enum variants with the
 /// `Yielded` and `Returned` structs.
 pub use Suspend::Yield;
+pub use compose::Compose;
 pub use continue_while::continue_while;
+pub use contramap_input::ContramapInput;
 pub use coro::Coro;
 pub use fixed_point::FixedPointCoro;
 pub use from_control_flow::from_control_flow;
@@ -486,6 +489,8 @@ pub use just_return::Returned;
 pub use just_return::just_return;
 pub use just_yield::Yielded;
 pub use just_yield::just_yield;
+pub use map_return::MapReturn;
+pub use map_yield::MapYield;
 pub use recursive::recursive;
 pub use return_with::return_with;
 pub use suspend::Suspend;
