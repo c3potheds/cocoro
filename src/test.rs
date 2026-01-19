@@ -214,3 +214,76 @@ fn iota_take_3() {
     .assert_yields(3, ())
     .assert_returns((), ());
 }
+
+#[test]
+fn map_yield_preserves_fixed_point() {
+    // just_yield is a FixedPointCoro, and map_yield should preserve that
+    use crate::just_yield::JustYield;
+
+    let coro = <JustYield<i32> as Coro<(), i32, Void>>::map_yield(
+        just_yield(42),
+        |x| x * 2,
+    );
+
+    // The fixed_point() call will only compile if coro is FixedPointCoro
+    // The fact that this compiles proves MapYield preserves FixedPointCoro
+    FixedPointCoro::<(), i32, Void>::fixed_point(coro)
+        .returns::<Void>()
+        .assert_yields(84, ())
+        .assert_yields(84, ());
+}
+
+#[test]
+fn map_return_preserves_fixed_point() {
+    // just_yield is a FixedPointCoro, and map_return should preserve that
+    use crate::just_yield::JustYield;
+
+    let coro = <JustYield<i32> as Coro<(), i32, ()>>::map_return(
+        just_yield(42),
+        |_| "done",
+    );
+
+    // The fixed_point() call will only compile if coro is FixedPointCoro
+    // The fact that this compiles proves MapReturn preserves FixedPointCoro
+    FixedPointCoro::<(), i32, &str>::fixed_point(coro)
+        .returns::<&str>()
+        .assert_yields(42, ())
+        .assert_yields(42, ());
+}
+
+#[test]
+fn compose_preserves_fixed_point() {
+    // Both just_yield coroutines are FixedPointCoro
+    use crate::just_yield::JustYield;
+
+    let composed = <JustYield<i32> as Coro<(), i32, Void>>::compose(
+        just_yield(10),
+        just_yield(20),
+    );
+
+    // The fixed_point() call will only compile if composed is FixedPointCoro
+    // The fact that this compiles proves Compose preserves FixedPointCoro
+    // compose yields from the second coroutine first, then the first
+    FixedPointCoro::<(), i32, Void>::fixed_point(composed)
+        .returns::<Void>()
+        .assert_yields(20, ())
+        .assert_yields(20, ());
+}
+
+#[test]
+fn contramap_input_preserves_fixed_point() {
+    // just_yield is a FixedPointCoro, and contramap_input should preserve that
+    use crate::just_yield::JustYield;
+
+    let coro = <JustYield<i32> as Coro<(), i32, Void>>::contramap_input(
+        just_yield(42),
+        |(): ()| (),
+    );
+
+    // The fixed_point() call will only compile if coro is FixedPointCoro
+    // The fact that this compiles proves ContramapInput preserves FixedPointCoro
+    FixedPointCoro::<(), i32, Void>::fixed_point(coro)
+        .returns::<Void>()
+        .assert_yields(42, ())
+        .assert_yields(42, ());
+}

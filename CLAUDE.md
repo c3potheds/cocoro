@@ -44,6 +44,18 @@ cargo check              # Type check without building
 cargo +nightly fmt       # Format code (uses nightly-only features for docstrings)
 ```
 
+### Documentation
+```bash
+cargo doc --no-deps                                    # Build docs (stable, no notable_trait)
+RUSTDOCFLAGS="--cfg docsrs" cargo +nightly doc --no-deps  # Build docs with notable_trait feature
+open target/doc/cocoro/index.html                     # Open docs in browser
+```
+
+The crate uses `#[doc(notable_trait)]` to highlight `Coro` and `FixedPointCoro` implementations in documentation. This feature is nightly-only, so:
+- The crate compiles on stable Rust without issues
+- To build docs with notable_trait highlighting locally, use `RUSTDOCFLAGS="--cfg docsrs"` with nightly
+- docs.rs automatically enables this feature when building canonical documentation
+
 ### Testing Structure
 - Unit tests: `src/test.rs` (requires `extern crate alloc`)
 - Integration tests: `tests/lib.rs`

@@ -27,6 +27,7 @@ use crate::coro::Coro;
 /// It should never be necessary to implement this trait manually, as all
 /// `Coro` implementations where `Next = Self` will automatically implement
 /// `FixedPointCoro`.
+#[cfg_attr(docsrs, doc(notable_trait))]
 pub unsafe trait FixedPointCoro<I, Y, R>:
     Coro<I, Y, R, Next = Self>
 {

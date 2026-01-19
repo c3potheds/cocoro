@@ -49,6 +49,7 @@ use crate::zip::Zip;
 /// a type, or, more commonly, by using functions like `yield_with()` or
 /// `just_yield()` and chaining combinators like `map_yield()` and
 /// `map_return()`.
+#[cfg_attr(docsrs, doc(notable_trait))]
 pub trait Coro<I, Y, R>: Sized {
     /// The next state of the coroutine after a call to `resume()`, if the
     /// coroutine yields a value.
@@ -296,7 +297,7 @@ pub trait Coro<I, Y, R>: Sized {
     /// .assert_yields(15, ())
     /// .assert_yields(18, ());
     /// ```
-    fn contramap_input<I2, F>(self, f: F) -> impl Coro<I2, Y, R>
+    fn contramap_input<I2, F>(self, f: F) -> ContramapInput<Self, F>
     where
         F: FnMut(I2) -> I,
     {
