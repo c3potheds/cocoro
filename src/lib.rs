@@ -439,6 +439,7 @@
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_notable_trait))]
 
+mod and_then;
 mod compose;
 mod continue_while;
 mod contramap_input;
@@ -476,6 +477,7 @@ pub use Suspend::Return;
 /// they are used so often. Do not confuse these enum variants with the
 /// `Yielded` and `Returned` structs.
 pub use Suspend::Yield;
+pub use and_then::AndThen;
 pub use compose::Compose;
 pub use continue_while::continue_while;
 pub use contramap_input::ContramapInput;
