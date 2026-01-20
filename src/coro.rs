@@ -387,14 +387,18 @@ pub trait Coro<I, Y, R>: Sized {
     /// Sequences two coroutines with explicit control over the boundary.
     ///
     /// When this coroutine returns a value `R`, the provided closure `f` is
-    /// called to produce a `Suspend<Y, R2, K>` state. This gives you explicit
-    /// control over what happens at the boundary:
-    /// - `Yield(y, next_coro)` - yield a value and transition to the next coroutine
-    /// - `Return(r)` - return immediately without starting another coroutine
+    /// called to produce a suspended state. This gives you explicit control
+    /// over what happens at the boundary:
+    /// - Yield a value and transition to the next coroutine
+    /// - Return immediately without starting another coroutine
+    ///
+    /// The closure can return any type implementing `Suspended`, such as
+    /// `Suspend::Yield(y, next)`, `Suspend::Return(r)`, `Yielded(y, next)`,
+    /// or `Returned(r)`.
     ///
     /// This differs from [`flat_map()`](Coro::flat_map) in two key ways:
-    /// 1. The closure returns a `Suspend` rather than a `Coro`, giving explicit
-    ///    control over the yield/return boundary
+    /// 1. The closure returns a suspended state rather than a `Coro`, giving
+    ///    explicit control over the yield/return boundary
     /// 2. The input is not copied between coroutines - you explicitly control
     ///    what state the next coroutine starts in
     ///
@@ -451,9 +455,10 @@ pub trait Coro<I, Y, R>: Sized {
     ///     .assert_yields((), 10)    // consumed first data byte
     ///     .assert_returns((2, (10, 20)), 20); // consume second data byte, get final result
     /// ```
-    fn and_then<R2, K, F>(self, f: F) -> impl Coro<I, Y, R2>
+    fn and_then<R2, K, S, F>(self, f: F) -> impl Coro<I, Y, R2>
     where
-        F: FnOnce(R) -> Suspend<Y, R2, K>,
+        F: FnOnce(R) -> S,
+        S: Suspended<I, Y, R2, Next = K>,
         K: Coro<I, Y, R2>,
     {
         AndThen::new(self, f)
