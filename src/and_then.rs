@@ -8,10 +8,10 @@ use crate::suspended::Suspended;
 
 /// A coroutine that sequences two coroutines with explicit control over the
 /// boundary. When the first coroutine returns, a closure is called to produce
-/// a `Suspend` state that determines what happens next.
+/// a `Suspended` state that determines what happens next.
 ///
 /// This differs from `flat_map()` in that:
-/// - The closure returns a `Suspend` rather than a `Coro`, giving explicit
+/// - The closure returns a `Suspended` rather than a `Coro`, giving explicit
 ///   control over the yield/return boundary
 /// - The input to the first coroutine is not copied to the second - the
 ///   programmer explicitly controls what state the second coroutine starts in
@@ -33,10 +33,11 @@ impl<A, F, R, B> AndThen<A, F, R, B> {
     }
 }
 
-impl<I, Y, R, R2, A, F, B> Coro<I, Y, R2> for AndThen<A, F, R, B>
+impl<I, Y, R, R2, A, F, S, B> Coro<I, Y, R2> for AndThen<A, F, R, B>
 where
     A: Coro<I, Y, R>,
-    F: FnOnce(R) -> Suspend<Y, R2, B>,
+    F: FnOnce(R) -> S,
+    S: Suspended<I, Y, R2, Next = B>,
     B: Coro<I, Y, R2>,
 {
     type Next = Either<AndThen<A::Next, F, R, B>, B>;
@@ -66,7 +67,7 @@ where
                 }),
             ),
             // First coroutine returned - call the continuation function
-            Return(r) => match continuation(r) {
+            Return(r) => match continuation(r).into_enum() {
                 // Continuation yielded - transition to second coroutine
                 Yield(y, b) => Yield(y, Right(b)),
                 // Continuation returned immediately - we're done
