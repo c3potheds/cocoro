@@ -90,29 +90,6 @@ impl<'a> Tokenizer<'a> {
     }
 }
 
-struct AtomParser(String);
-
-impl Coro<char, (), Result<String, ParseError>> for AtomParser {
-    type Next = Self;
-    type Suspend = Suspend<(), Result<String, ParseError>, Self>;
-
-    fn resume(self, c: char) -> Self::Suspend {
-        let Self(mut so_far) = self;
-        if c.is_alphanumeric() || "+-*/_=<>!?".contains(c) {
-            so_far.push(c);
-            Yield((), Self(so_far))
-        } else if c.is_whitespace() {
-            if so_far.is_empty() {
-                Return(Err(ParseError::UnexpectedEof))
-            } else {
-                Return(Ok(so_far))
-            }
-        } else {
-            Return(Err(ParseError::UnknownChar(c)))
-        }
-    }
-}
-
 struct FromState<A, C>(A, C);
 impl<A, I, Y, R, C> Coro<I, Y, R> for FromState<A, C>
 where
@@ -253,36 +230,6 @@ impl Coro<Token, (), Result<SExpr, ParseError>> for SExprParser {
             (SExprParser::InList(elements), Token::RightParen) => {
                 Return(Ok(SExpr::List(elements)))
             }
-        }
-    }
-}
-
-// Simple list parser that collects elements
-struct ListParser {
-    elements: Vec<SExpr>,
-    expecting_element: bool,
-}
-
-impl Coro<Token, (), Result<SExpr, ParseError>> for ListParser {
-    type Next = Self;
-    type Suspend = Suspend<(), Result<SExpr, ParseError>, Self>;
-
-    fn resume(mut self, token: Token) -> Self::Suspend {
-        match token {
-            Token::Atom(s) => {
-                self.elements.push(SExpr::Atom(s));
-                self.expecting_element = false;
-                Yield((), self)
-            }
-
-            Token::LeftParen => {
-                // Nested list - for simplicity, treat as atom for now
-                self.elements.push(SExpr::List(vec![]));
-                self.expecting_element = false;
-                Yield((), self)
-            }
-
-            Token::RightParen => Return(Ok(SExpr::List(self.elements))),
         }
     }
 }

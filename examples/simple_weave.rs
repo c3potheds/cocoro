@@ -25,8 +25,6 @@ enum Token {
 #[derive(Debug, Clone, PartialEq)]
 enum ParseResult {
     Words(Vec<String>),
-    Numbers(Vec<i32>),
-    // Mixed(Vec<Token>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -168,30 +166,6 @@ impl Coro<Token, (), ParseResult> for WordCollector {
                 Yield((), self)
             }
             Token::End => Return(ParseResult::Words(self.words)),
-        }
-    }
-}
-
-// Parser that collects only numbers
-struct NumberCollector {
-    numbers: Vec<i32>,
-}
-
-impl Coro<Token, (), ParseResult> for NumberCollector {
-    type Next = Self;
-    type Suspend = Suspend<(), ParseResult, Self>;
-
-    fn resume(mut self, token: Token) -> Self::Suspend {
-        match token {
-            Token::Number(num) => {
-                self.numbers.push(num);
-                Yield((), self)
-            }
-            Token::Word(_) => {
-                // Skip words, continue collecting
-                Yield((), self)
-            }
-            Token::End => Return(ParseResult::Numbers(self.numbers)),
         }
     }
 }
