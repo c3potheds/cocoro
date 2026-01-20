@@ -264,14 +264,17 @@ mod tests {
         let parser = parse_csv(csv);
 
         let mut records = Vec::new();
-        let result = parser.take(2).for_each(|record| {
-            records.push(record);
-        });
+        let result = parser
+            .map_return(|_| Some(()))
+            .compose(take(2).map_return(|_| None))
+            .for_each(|record| {
+                records.push(record);
+            });
 
         assert_eq!(records.len(), 2);
         assert_eq!(records[0].fields, vec!["a", "b"]);
         assert_eq!(records[1].fields, vec!["1", "2"]);
-        // Should return None because we stopped early
+        // Should return None because we stopped early (take limit reached)
         assert_eq!(result, None);
     }
 
