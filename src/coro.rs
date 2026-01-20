@@ -1,6 +1,7 @@
 use Suspend::Return;
 use Suspend::Yield;
 
+use crate::and_then::AndThen;
 use crate::compose::Compose;
 use crate::contramap_input::ContramapInput;
 use crate::fixed_point::FixedPointCoro;
@@ -383,6 +384,81 @@ pub trait Coro<I, Y, R>: Sized {
         self.map_return(f).flatten()
     }
 
+    /// Sequences two coroutines with explicit control over the boundary.
+    ///
+    /// When this coroutine returns a value `R`, the provided closure `f` is
+    /// called to produce a `Suspend<Y, R2, K>` state. This gives you explicit
+    /// control over what happens at the boundary:
+    /// - `Yield(y, next_coro)` - yield a value and transition to the next coroutine
+    /// - `Return(r)` - return immediately without starting another coroutine
+    ///
+    /// This differs from [`flat_map()`](Coro::flat_map) in two key ways:
+    /// 1. The closure returns a `Suspend` rather than a `Coro`, giving explicit
+    ///    control over the yield/return boundary
+    /// 2. The input is not copied between coroutines - you explicitly control
+    ///    what state the next coroutine starts in
+    ///
+    /// This preserves linearity of inputs, making it ideal for parsers and other
+    /// scenarios where each input should be consumed exactly once.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage with a yield boundary:
+    ///
+    /// ```rust
+    /// use cocoro::Coro;
+    /// use cocoro::Returned;
+    /// use cocoro::Suspend::Yield;
+    /// use cocoro::from_fn;
+    /// use cocoro::just_return;
+    ///
+    /// let coro = just_return(5)
+    ///     .yields::<i32>()
+    ///     .and_then(|n| Yield(n * 2, from_fn(move |_: ()| Returned(n * 4))));
+    ///
+    /// // First coroutine returns 5, we yield 10, then return 20
+    /// coro.assert_yields(10, ()).assert_returns(20, ());
+    /// ```
+    ///
+    /// Parser example showing linear input consumption:
+    ///
+    /// ```rust
+    /// use cocoro::Coro;
+    /// use cocoro::Suspend::Yield;
+    /// use cocoro::Returned;
+    /// use cocoro::from_fn;
+    ///
+    /// // Read two bytes and return them as a tuple, yielding after the first
+    /// fn read_two_bytes() -> impl Coro<u8, (), (u8, u8)> {
+    ///     from_fn(|first| {
+    ///         Yield((), from_fn(move |second| {
+    ///             Returned((first, second))
+    ///         }))
+    ///     })
+    /// }
+    ///
+    /// // Read a length byte, then read that many bytes
+    /// let parser = from_fn(|len: u8| Returned(len))
+    ///     .and_then(|len| {
+    ///         // Yield () to create a boundary - the next resume gets a fresh byte
+    ///         // (not the length byte we just consumed)
+    ///         Yield((), read_two_bytes().map_return(move |pair| (len, pair)))
+    ///     });
+    ///
+    /// // Resume with length=2, then two data bytes
+    /// parser
+    ///     .assert_yields((), 2)     // consumed length byte, yielding boundary
+    ///     .assert_yields((), 10)    // consumed first data byte
+    ///     .assert_returns((2, (10, 20)), 20); // consume second data byte, get final result
+    /// ```
+    fn and_then<R2, K, F>(self, f: F) -> impl Coro<I, Y, R2>
+    where
+        F: FnOnce(R) -> Suspend<Y, R2, K>,
+        K: Coro<I, Y, R2>,
+    {
+        AndThen::new(self, f)
+    }
+
     /// Extracts the next yielded value from the coroutine and asserts that it
     /// is equal to the expected value. Panics if the coroutine returns instead
     /// of yielding or if the yielded value is not equal to the expected value.
@@ -741,10 +817,10 @@ pub trait Coro<I, Y, R>: Sized {
     ///
     /// // Verify the yielded chunks
     /// assert_eq!(chunks.len(), 2);
-    /// assert_eq!(chunks[0], b"hello");  // First 5 bytes
-    /// assert_eq!(chunks[1], b", ");     // Next 2 bytes (no comma in "hello")
+    /// assert_eq!(chunks[0], b"hello"); // First 5 bytes
+    /// assert_eq!(chunks[1], b", "); // Next 2 bytes (no comma in "hello")
     /// // The final chunk is returned, not yielded
-    /// assert_eq!(remainder, b"world");  // Last 5 bytes (comma in ", ")
+    /// assert_eq!(remainder, b"world"); // Last 5 bytes (comma in ", ")
     /// ```
     fn drive(self, input: I, mut driver: impl FnMut(Y) -> I) -> R {
         match self.resume(input).into_enum() {

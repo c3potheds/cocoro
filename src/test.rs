@@ -287,3 +287,39 @@ fn contramap_input_preserves_fixed_point() {
         .assert_yields(42, ())
         .assert_yields(42, ());
 }
+
+#[test]
+fn and_then_basic() {
+    use crate::Suspend::Yield;
+
+    just_return(5)
+        .and_then(|n| Yield(n * 2, just_return(n * 3)))
+        .assert_yields(10, ())
+        .assert_returns(15, ());
+}
+
+#[test]
+fn and_then_with_multiple_yields() {
+    use crate::Suspend::Yield;
+
+    just_return(3)
+        .and_then(|n| {
+            Yield(n, from_fn(move |_: ()| Yield(n * 2, just_return(n * 3))))
+        })
+        .assert_yields(3, ())
+        .assert_yields(6, ())
+        .assert_returns(9, ());
+}
+
+#[test]
+fn and_then_chaining() {
+    use crate::Suspend::Yield;
+
+    // Chain multiple and_then calls
+    just_return(2)
+        .and_then(|n| Yield(n, just_return(n + 2)))
+        .and_then(|n| Yield(n, just_return(n * 3)))
+        .assert_yields(2, ())
+        .assert_yields(4, ())
+        .assert_returns(12, ());
+}
