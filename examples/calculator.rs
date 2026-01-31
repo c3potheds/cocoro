@@ -1,4 +1,5 @@
-// A simple calculator example demonstrating lexer/parser composition with weave()
+// A simple calculator example demonstrating lexer/parser composition with
+// weave()
 //
 // This example shows how to compose coroutines using weave() for a complete
 // parsing pipeline that handles tokenization and AST construction separately,
@@ -317,7 +318,8 @@ impl Coro<Token, (), Result<Expr, ParseError>> for Parser {
                         if parser.pos == tokens.len() {
                             Suspend::Return(Ok(expr))
                         } else {
-                            // Continue accumulating - we might have more to parse
+                            // Continue accumulating - we might have more to
+                            // parse
                             self = Parser::Parsing(tokens);
                             Suspend::Yield((), self)
                         }

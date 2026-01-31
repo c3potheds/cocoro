@@ -18,7 +18,8 @@ where
     }
 }
 
-/// Creates a coroutine that returns a value computed by a function of the input.
+/// Creates a coroutine that returns a value computed by a function of the
+/// input.
 ///
 /// The state of a `return_with()` coroutine is owned by the `FnOnce`, which is
 /// responsible for computing the return value based on the input.
