@@ -281,7 +281,8 @@ fn contramap_input_preserves_fixed_point() {
     );
 
     // The fixed_point() call will only compile if coro is FixedPointCoro
-    // The fact that this compiles proves ContramapInput preserves FixedPointCoro
+    // The fact that this compiles proves ContramapInput preserves
+    // FixedPointCoro
     FixedPointCoro::<(), i32, Void>::fixed_point(coro)
         .returns::<Void>()
         .assert_yields(42, ())

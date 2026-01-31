@@ -61,8 +61,8 @@ pub trait Coro<I, Y, R>: Sized {
     /// It is possible, and common, for `Next` to be `Self`
     /// if the coroutine's full state machine can be represented by a single
     /// type. When `Next` is `Self`, the coroutine is a
-    /// "fixed-point coroutine" and automatically implements the `FixedPointCoro`
-    /// subtrait.
+    /// "fixed-point coroutine" and automatically implements the
+    /// `FixedPointCoro` subtrait.
     type Next: Coro<I, Y, R>;
 
     /// The type of the suspended state of the coroutine, which is either a
@@ -402,8 +402,8 @@ pub trait Coro<I, Y, R>: Sized {
     /// 2. The input is not copied between coroutines - you explicitly control
     ///    what state the next coroutine starts in
     ///
-    /// This preserves linearity of inputs, making it ideal for parsers and other
-    /// scenarios where each input should be consumed exactly once.
+    /// This preserves linearity of inputs, making it ideal for parsers and
+    /// other scenarios where each input should be consumed exactly once.
     ///
     /// # Examples
     ///
@@ -907,7 +907,8 @@ pub trait Coro<I, Y, R>: Sized {
     /// pass `((), ()` as the input. There are a couple of easy techniques to
     /// simplify this:
     ///
-    /// 1. Use `Default::default()` as the input, if the input type is `Default`.
+    /// 1. Use `Default::default()` as the input, if the input type is
+    ///    `Default`.
     /// 2. Use `contramap_input()` to change the input type.
     ///
     /// ```rust

@@ -193,8 +193,8 @@ fn test_weave_cps_with_flat_map() {
         }
     }
 
-    // Test flat_map coroutine (which uses FlattenImpl internally) with weave_cps
-    // Use simpler coroutines to avoid deep recursion in flat_map
+    // Test flat_map coroutine (which uses FlattenImpl internally) with
+    // weave_cps Use simpler coroutines to avoid deep recursion in flat_map
     let flat_mapped =
         just_return("outer").flat_map(|_: &str| just_return("flat_mapped"));
     let competitor = just_return("competitor");

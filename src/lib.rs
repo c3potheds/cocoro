@@ -38,9 +38,9 @@
 //!     reference.
 //!   * The types for "yield" and "return" are generic parameters rather than
 //!     associated types.
-//!   * The `resume` method returns a `Suspend` type that wraps the state of
-//!     the coroutine, which provides to a "visitor" a handle to a coroutine
-//!     that can be resumed again.
+//!   * The `resume` method returns a `Suspend` type that wraps the state of the
+//!     coroutine, which provides to a "visitor" a handle to a coroutine that
+//!     can be resumed again.
 //!
 //! The `Suspended` trait can be thought of as an abstraction over an enum.
 //! Indeed, many implementations of coroutines will use the following enum which
@@ -305,11 +305,11 @@
 //! ## Why is it called `cocoro`?
 //!
 //! I was thinking more along the lines of a pun: "coro" as an abbreviation
-//! for "coroutine", and "co" as a prefix meaning "together" or "with" to indicate
-//! its complementarity and perhaps subordination to Rust standard library
-//! coroutines. As another layer to the pun, "cocoro" sounds like "kokoro",
-//! which is the Japanese word for "heart", with all the attendant connotations
-//! of mind, spirit, and core-ness.
+//! for "coroutine", and "co" as a prefix meaning "together" or "with" to
+//! indicate its complementarity and perhaps subordination to Rust standard
+//! library coroutines. As another layer to the pun, "cocoro" sounds like
+//! "kokoro", which is the Japanese word for "heart", with all the attendant
+//! connotations of mind, spirit, and core-ness.
 //!
 //! I was also vaguely gesturing at the idea of co- as a prefix for mathematical
 //! duals, especially in the context of category theory. Although a coroutine is

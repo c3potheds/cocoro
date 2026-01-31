@@ -6,7 +6,7 @@
 //!
 //! Key concepts demonstrated:
 //! - Using `from_control_flow()` for stateful parsing
-//! - `ControlFlow::Continue` vs `ControlFlow::Break` semantics  
+//! - `ControlFlow::Continue` vs `ControlFlow::Break` semantics
 //! - Closure state capture for maintaining parser state
 //! - Lifetime annotations with `impl Trait + '_`
 //! - Composing coroutines with combinators like `map_yield()`, `take()`,

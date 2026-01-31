@@ -13,3 +13,8 @@ imports_granularity = "item"
 # Sort imports into groups. The "StdExternalCrate" ordering follows the "don't
 # look down" principle of topologically sorting elements.
 group_imports = "StdExternalCrate"
+
+# Wrap comments by default. URLs are not wrapped. This is helpful because This
+# crate has a lot of very long docstrings and formatting them manually to stay
+# within the margins can be a chore.
+wrap_comments = true
