@@ -50,6 +50,29 @@ use crate::zip::Zip;
 /// a type, or, more commonly, by using functions like `yield_with()` or
 /// `just_yield()` and chaining combinators like `map_yield()` and
 /// `map_return()`.
+///
+/// # Testing Coroutines
+///
+/// The [`CoroAssertions`] extension trait provides `assert_yields()` and
+/// `assert_returns()` methods for testing coroutines. Import this trait in
+/// your tests to access these assertion methods:
+///
+/// ```rust
+/// use cocoro::Coro;
+/// use cocoro::CoroAssertions;
+/// use cocoro::Void;
+/// use cocoro::yield_with;
+///
+/// let mut i = 0;
+/// yield_with(|()| {
+///     i += 1;
+///     i
+/// })
+/// .returns::<Void>()
+/// .assert_yields(1, ())
+/// .assert_yields(2, ())
+/// .assert_yields(3, ());
+/// ```
 #[cfg_attr(docsrs, doc(notable_trait))]
 pub trait Coro<I, Y, R>: Sized {
     /// The next state of the coroutine after a call to `resume()`, if the
@@ -108,6 +131,7 @@ pub trait Coro<I, Y, R>: Sized {
     ///
     /// ```rust
     /// use cocoro::Coro;
+    /// use cocoro::CoroAssertions;
     /// use cocoro::Void;
     /// use cocoro::just_return;
     ///
@@ -165,6 +189,7 @@ pub trait Coro<I, Y, R>: Sized {
     ///
     /// ```rust
     /// use cocoro::Coro;
+    /// use cocoro::CoroAssertions;
     /// use cocoro::Void;
     /// use cocoro::yield_with;
     ///
@@ -200,6 +225,7 @@ pub trait Coro<I, Y, R>: Sized {
     ///
     /// ```rust
     /// use cocoro::Coro;
+    /// use cocoro::CoroAssertions;
     /// use cocoro::Void;
     /// use cocoro::yield_with;
     ///
@@ -246,6 +272,7 @@ pub trait Coro<I, Y, R>: Sized {
     ///
     /// ```rust
     /// use cocoro::Coro;
+    /// use cocoro::CoroAssertions;
     /// use cocoro::Void;
     /// use cocoro::just_return;
     ///
@@ -279,6 +306,7 @@ pub trait Coro<I, Y, R>: Sized {
     ///
     /// ```rust
     /// use cocoro::Coro;
+    /// use cocoro::CoroAssertions;
     /// use cocoro::Void;
     /// use cocoro::yield_with;
     ///
@@ -323,6 +351,7 @@ pub trait Coro<I, Y, R>: Sized {
     ///
     /// ```rust
     /// use cocoro::Coro;
+    /// use cocoro::CoroAssertions;
     /// use cocoro::Void;
     /// use cocoro::just_return;
     /// use cocoro::yield_with;
@@ -351,6 +380,7 @@ pub trait Coro<I, Y, R>: Sized {
     ///
     /// ```rust
     /// use cocoro::Coro;
+    /// use cocoro::CoroAssertions;
     /// use cocoro::Void;
     /// use cocoro::take;
     /// use cocoro::yield_with;
@@ -411,6 +441,7 @@ pub trait Coro<I, Y, R>: Sized {
     ///
     /// ```rust
     /// use cocoro::Coro;
+    /// use cocoro::CoroAssertions;
     /// use cocoro::Returned;
     /// use cocoro::Suspend::Yield;
     /// use cocoro::from_fn;
@@ -431,6 +462,7 @@ pub trait Coro<I, Y, R>: Sized {
     /// use cocoro::Suspend::Yield;
     /// use cocoro::Returned;
     /// use cocoro::from_fn;
+    /// use cocoro::CoroAssertions;
     ///
     /// // Read two bytes and return them as a tuple, yielding after the first
     /// fn read_two_bytes() -> impl Coro<u8, (), (u8, u8)> {
@@ -462,110 +494,6 @@ pub trait Coro<I, Y, R>: Sized {
         K: Coro<I, Y, R2>,
     {
         AndThen::new(self, f)
-    }
-
-    /// Extracts the next yielded value from the coroutine and asserts that it
-    /// is equal to the expected value. Panics if the coroutine returns instead
-    /// of yielding or if the yielded value is not equal to the expected value.
-    ///
-    /// This is most useful for testing. Since it returns the next state of the
-    /// coroutine after the assertion, it can be chained with other assertions
-    /// like so:
-    ///
-    /// ```rust
-    /// use cocoro::Coro;
-    /// use cocoro::Void;
-    /// use cocoro::yield_with;
-    ///
-    /// let mut i = 0;
-    /// yield_with(|()| {
-    ///     i += 1;
-    ///     i
-    /// })
-    /// .returns::<Void>()
-    /// .assert_yields(1, ())
-    /// .assert_yields(2, ())
-    /// .assert_yields(3, ());
-    /// ```
-    ///
-    /// The `input` parameter is passed to the `resume()` method of the
-    /// coroutine to drive it.
-    ///
-    /// ```rust
-    /// use cocoro::Coro;
-    /// use cocoro::Void;
-    /// use cocoro::yield_with;
-    /// let mut length = 0;
-    /// yield_with(move |s: &str| {
-    ///     length += s.len();
-    ///     length
-    /// })
-    /// .returns::<Void>()
-    /// .assert_yields(3, "foo")
-    /// .assert_yields(6, "bar")
-    /// .assert_yields(11, "hello");
-    /// ```
-    fn assert_yields(self, expected: Y, input: I) -> Self::Next
-    where
-        Y: PartialEq + core::fmt::Debug,
-        R: core::fmt::Debug,
-    {
-        match self.resume(input).into_enum() {
-            Yield(actual, next) => {
-                assert_eq!(
-                    actual, expected,
-                    "expected Yield({expected:?}), got Yield({actual:?})"
-                );
-                next
-            }
-            Return(actual) => {
-                panic!("expected Yield{expected:?}, got Return({actual:?})")
-            }
-        }
-    }
-
-    /// Extracts the return value from the coroutine and asserts that it is
-    /// equal to the expected value. Panics if the coroutine yields instead of
-    /// returning or if the return value is not equal to the expected value.
-    ///
-    /// This is most useful for testing. This can be useful at the end of a
-    /// chain of `assert_yields()` calls to ensure that the coroutine returns
-    /// with the expected value at the end.
-    ///
-    /// The `input` parameter is passed to the `resume()` method of the
-    /// coroutine to drive it.
-    ///
-    /// ```rust
-    /// use cocoro::Coro;
-    /// use cocoro::take;
-    /// use cocoro::yield_with;
-    ///
-    /// let mut length = 0;
-    /// yield_with(move |s: &str| {
-    ///     length += s.len();
-    ///     length
-    /// })
-    /// .compose(take(2))
-    /// .assert_yields(3, "foo")
-    /// .assert_yields(6, "bar")
-    /// .assert_returns((), "hello");
-    /// ```
-    fn assert_returns(self, expected: R, input: I)
-    where
-        Y: core::fmt::Debug,
-        R: PartialEq + core::fmt::Debug,
-    {
-        match self.resume(input).into_enum() {
-            Yield(actual, _) => {
-                panic!("expected Return({expected:?}), got Yield({actual:?})")
-            }
-            Return(actual) => {
-                assert_eq!(
-                    actual, expected,
-                    "expected Return({expected:?}), got Return({actual:?})"
-                );
-            }
-        }
     }
 
     /// Executes the last step of the coroutine, returning the return value.
@@ -604,6 +532,7 @@ pub trait Coro<I, Y, R>: Sized {
     ///
     /// ```rust
     /// use cocoro::Coro;
+    /// use cocoro::CoroAssertions;
     /// use cocoro::Void;
     /// use cocoro::just_yield;
     /// use cocoro::yield_with;
@@ -707,6 +636,7 @@ pub trait Coro<I, Y, R>: Sized {
     /// use core::ops::ControlFlow::*;
     ///
     /// use cocoro::Coro;
+    /// use cocoro::CoroAssertions;
     /// use cocoro::FixedPointCoro;
     /// use cocoro::IntoCoro;
     /// use cocoro::Returned;
@@ -883,6 +813,7 @@ pub trait Coro<I, Y, R>: Sized {
     ///
     /// ```rust
     /// use cocoro::Coro;
+    /// use cocoro::CoroAssertions;
     /// use cocoro::Void;
     /// use cocoro::yield_with;
     ///
@@ -913,6 +844,7 @@ pub trait Coro<I, Y, R>: Sized {
     ///
     /// ```rust
     /// use cocoro::Coro;
+    /// use cocoro::CoroAssertions;
     /// use cocoro::Void;
     /// use cocoro::yield_with;
     ///
@@ -1029,6 +961,7 @@ pub trait Coro<I, Y, R>: Sized {
     ///
     /// ```rust
     /// use cocoro::Coro;
+    /// use cocoro::CoroAssertions;
     /// use cocoro::IntoCoro;
     /// use cocoro::Void;
     /// use cocoro::yield_with;

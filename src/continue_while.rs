@@ -13,6 +13,7 @@ use crate::with_state;
 ///
 /// ```rust
 /// use cocoro::Coro;
+/// use cocoro::CoroAssertions;
 /// use cocoro::IntoCoro;
 /// use cocoro::continue_while;
 ///
@@ -30,6 +31,7 @@ use crate::with_state;
 ///
 /// ```rust
 /// use cocoro::Coro;
+/// use cocoro::CoroAssertions;
 /// use cocoro::IntoCoro;
 /// use cocoro::continue_while;
 ///

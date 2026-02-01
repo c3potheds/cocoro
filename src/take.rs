@@ -9,6 +9,7 @@ use crate::with_state;
 ///
 /// ```rust
 /// use cocoro::Coro;
+/// use cocoro::CoroAssertions;
 /// use cocoro::take;
 /// use cocoro::yield_with;
 ///
@@ -37,6 +38,7 @@ use crate::with_state;
 ///
 /// ```rust
 /// use cocoro::Coro;
+/// use cocoro::CoroAssertions;
 /// use cocoro::Yield;
 /// use cocoro::from_fn;
 /// use cocoro::just_return;

@@ -8,6 +8,7 @@ use core::ops::ControlFlow::*;
 
 use super::*;
 use crate::Coro;
+use crate::CoroAssertions;
 use crate::from_control_flow;
 
 #[test]
