@@ -19,9 +19,9 @@ use crate::suspended::Suspended;
 ///     i
 /// })
 /// .returns::<Void>()
-/// .assert_yields(1, ())
-/// .assert_yields(2, ())
-/// .assert_yields(3, ());
+/// .assert_yields((), 1)
+/// .assert_yields((), 2)
+/// .assert_yields((), 3);
 /// ```
 pub trait CoroAssertions<I, Y, R>: Coro<I, Y, R> {
     /// Extracts the next yielded value from the coroutine and asserts that it
@@ -44,9 +44,9 @@ pub trait CoroAssertions<I, Y, R>: Coro<I, Y, R> {
     ///     i
     /// })
     /// .returns::<Void>()
-    /// .assert_yields(1, ())
-    /// .assert_yields(2, ())
-    /// .assert_yields(3, ());
+    /// .assert_yields((), 1)
+    /// .assert_yields((), 2)
+    /// .assert_yields((), 3);
     /// ```
     ///
     /// The `input` parameter is passed to the `resume()` method of the
@@ -63,11 +63,11 @@ pub trait CoroAssertions<I, Y, R>: Coro<I, Y, R> {
     ///     length
     /// })
     /// .returns::<Void>()
-    /// .assert_yields(3, "foo")
-    /// .assert_yields(6, "bar")
-    /// .assert_yields(11, "hello");
+    /// .assert_yields("foo", 3)
+    /// .assert_yields("bar", 6)
+    /// .assert_yields("hello", 11);
     /// ```
-    fn assert_yields(self, expected: Y, input: I) -> Self::Next
+    fn assert_yields(self, input: I, expected: Y) -> Self::Next
     where
         Y: PartialEq + core::fmt::Debug,
         R: core::fmt::Debug,
@@ -112,11 +112,11 @@ pub trait CoroAssertions<I, Y, R>: Coro<I, Y, R> {
     ///     length
     /// })
     /// .compose(take(2))
-    /// .assert_yields(3, "foo")
-    /// .assert_yields(6, "bar")
-    /// .assert_returns((), "hello");
+    /// .assert_yields("foo", 3)
+    /// .assert_yields("bar", 6)
+    /// .assert_returns("hello", ());
     /// ```
-    fn assert_returns(self, expected: R, input: I)
+    fn assert_returns(self, input: I, expected: R)
     where
         Y: core::fmt::Debug,
         R: PartialEq + core::fmt::Debug,

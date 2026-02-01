@@ -25,9 +25,9 @@ use crate::with_state;
 /// iota()
 ///     // Limit the yielded values to 3.
 ///     .compose(take(3))
-///     .assert_yields(1, ())
-///     .assert_yields(2, ())
-///     .assert_yields(3, ())
+///     .assert_yields((), 1)
+///     .assert_yields((), 2)
+///     .assert_yields((), 3)
 ///     .assert_returns((), ());
 /// ```
 ///
@@ -51,9 +51,9 @@ use crate::with_state;
 ///     // Map the `take()` coroutine's return value to `None` to indicate that
 ///     // the limit was reached, and to match the type of the source.
 ///     .compose(take(5).map_return(|_| None))
-///     .assert_yields(1, ())
-///     .assert_yields(2, ())
-///     .assert_returns(Some("done"), ());
+///     .assert_yields((), 1)
+///     .assert_yields((), 2)
+///     .assert_returns((), Some("done"));
 /// ```
 pub fn take<T>(n: usize) -> impl FixedPointCoro<T, T, ()> {
     use core::ops::ControlFlow::*;
