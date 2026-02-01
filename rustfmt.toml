@@ -14,7 +14,7 @@ imports_granularity = "item"
 # look down" principle of topologically sorting elements.
 group_imports = "StdExternalCrate"
 
-# Wrap comments by default. URLs are not wrapped. This is helpful because This
+# Wrap comments by default. URLs are not wrapped. This is helpful because this
 # crate has a lot of very long docstrings and formatting them manually to stay
 # within the margins can be a chore.
 wrap_comments = true
