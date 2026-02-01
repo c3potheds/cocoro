@@ -37,6 +37,7 @@ where
 ///
 /// ```rust
 /// use cocoro::Coro;
+/// use cocoro::CoroAssertions;
 /// use cocoro::Returned;
 /// use cocoro::Void;
 /// use cocoro::Yield;

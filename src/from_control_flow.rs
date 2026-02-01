@@ -33,6 +33,7 @@ pub struct FromControlFlow<F, I, Y, R> {
 /// use core::ops::ControlFlow;
 ///
 /// use cocoro::Coro;
+/// use cocoro::CoroAssertions;
 /// use cocoro::Void;
 /// use cocoro::from_control_flow;
 ///
