@@ -52,10 +52,10 @@ where
 ///     Returned("Blastoff!") })) })) }))
 /// });
 /// countdown
-///     .assert_yields(3, ())
-///     .assert_yields(2, ())
-///     .assert_yields(1, ())
-///     .assert_returns("Blastoff!", ());
+///     .assert_yields((), 3)
+///     .assert_yields((), 2)
+///     .assert_yields((), 1)
+///     .assert_returns((), "Blastoff!");
 /// ```
 pub fn from_fn<I, Y, R, N, S, F>(
     f: F,

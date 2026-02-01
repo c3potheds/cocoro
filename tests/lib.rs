@@ -28,9 +28,9 @@ fn from_iterator() {
         [1, 2, 3].into_coro()
     }
     make_coro()
-        .assert_yields(1, ())
-        .assert_yields(2, ())
-        .assert_yields(3, ())
+        .assert_yields((), 1)
+        .assert_yields((), 2)
+        .assert_yields((), 3)
         .assert_returns((), ());
 }
 
@@ -39,17 +39,17 @@ fn join_just_return_and_just_return() {
     just_return(1)
         .join(just_return(2))
         .yields::<Void>()
-        .assert_returns((1, 2), ());
+        .assert_returns((), (1, 2));
 }
 
 #[test]
 fn join_just_yield_and_just_yield() {
     join(just_yield(1), just_yield(2))
         .returns::<(Void, Void)>()
-        .assert_yields(1, ())
-        .assert_yields(2, ())
-        .assert_yields(1, ())
-        .assert_yields(2, ());
+        .assert_yields((), 1)
+        .assert_yields((), 2)
+        .assert_yields((), 1)
+        .assert_yields((), 2);
 }
 
 #[test]
@@ -58,12 +58,12 @@ fn join_left_is_longer() {
         ["a1", "a2", "a3"].into_coro().map_return(|()| "A"),
         ["b1", "b2"].into_coro().map_return(|()| "B"),
     )
-    .assert_yields("a1", ())
-    .assert_yields("b1", ())
-    .assert_yields("a2", ())
-    .assert_yields("b2", ())
-    .assert_yields("a3", ())
-    .assert_returns(("A", "B"), ());
+    .assert_yields((), "a1")
+    .assert_yields((), "b1")
+    .assert_yields((), "a2")
+    .assert_yields((), "b2")
+    .assert_yields((), "a3")
+    .assert_returns((), ("A", "B"));
 }
 
 #[test]
@@ -72,12 +72,12 @@ fn join_right_is_longer() {
         ["a1", "a2"].into_coro().map_return(|()| "A"),
         ["b1", "b2", "b3"].into_coro().map_return(|()| "B"),
     )
-    .assert_yields("a1", ())
-    .assert_yields("b1", ())
-    .assert_yields("a2", ())
-    .assert_yields("b2", ())
-    .assert_yields("b3", ())
-    .assert_returns(("A", "B"), ());
+    .assert_yields((), "a1")
+    .assert_yields((), "b1")
+    .assert_yields((), "a2")
+    .assert_yields((), "b2")
+    .assert_yields((), "b3")
+    .assert_returns((), ("A", "B"));
 }
 
 #[test]
@@ -86,10 +86,10 @@ fn join_left_is_empty() {
         [].into_coro().map_return(|()| "A"),
         ["b1", "b2", "b3"].into_coro().map_return(|()| "B"),
     )
-    .assert_yields("b1", ())
-    .assert_yields("b2", ())
-    .assert_yields("b3", ())
-    .assert_returns(("A", "B"), ());
+    .assert_yields((), "b1")
+    .assert_yields((), "b2")
+    .assert_yields((), "b3")
+    .assert_returns((), ("A", "B"));
 }
 
 #[test]
@@ -98,10 +98,10 @@ fn join_right_is_empty() {
         ["a1", "a2", "a3"].into_coro().map_return(|()| "A"),
         [].into_coro().map_return(|()| "B"),
     )
-    .assert_yields("a1", ())
-    .assert_yields("a2", ())
-    .assert_yields("a3", ())
-    .assert_returns(("A", "B"), ());
+    .assert_yields((), "a1")
+    .assert_yields((), "a2")
+    .assert_yields((), "a3")
+    .assert_returns((), ("A", "B"));
 }
 
 #[test]
@@ -217,17 +217,17 @@ fn test_complex_flat_map_compilation() {
         }
     })
     .flat_map(|_: &str| just_return("flat_mapped"))
-    .assert_yields(2, 1)
-    .assert_yields(3, 2)
-    .assert_yields(4, 3)
-    .assert_yields(5, 4)
-    .assert_yields(6, 5)
-    .assert_yields(7, 6)
-    .assert_yields(8, 7)
-    .assert_yields(9, 8)
-    .assert_yields(10, 9)
-    .assert_yields(11, 10)
-    .assert_returns("flat_mapped", 11);
+    .assert_yields(1, 2)
+    .assert_yields(2, 3)
+    .assert_yields(3, 4)
+    .assert_yields(4, 5)
+    .assert_yields(5, 6)
+    .assert_yields(6, 7)
+    .assert_yields(7, 8)
+    .assert_yields(8, 9)
+    .assert_yields(9, 10)
+    .assert_yields(10, 11)
+    .assert_returns(11, "flat_mapped");
 }
 
 #[test]

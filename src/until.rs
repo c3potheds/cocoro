@@ -48,9 +48,9 @@ use crate::with_state;
 ///         }),
 ///         |r, _| Returned(r),
 ///     )
-///     .assert_yields(5, ())
-///     .assert_yields(10, ())
-///     .assert_yields(15, ())
+///     .assert_yields((), 5)
+///     .assert_yields((), 10)
+///     .assert_yields((), 15)
 ///     .assert_returns((), ());
 /// ```
 pub fn until<T, F>(f: F) -> impl FixedPointCoro<T, T, T>

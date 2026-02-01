@@ -69,9 +69,9 @@ use crate::zip::Zip;
 ///     i
 /// })
 /// .returns::<Void>()
-/// .assert_yields(1, ())
-/// .assert_yields(2, ())
-/// .assert_yields(3, ());
+/// .assert_yields((), 1)
+/// .assert_yields((), 2)
+/// .assert_yields((), 3);
 /// ```
 #[cfg_attr(docsrs, doc(notable_trait))]
 pub trait Coro<I, Y, R>: Sized {
@@ -135,7 +135,7 @@ pub trait Coro<I, Y, R>: Sized {
     /// use cocoro::Void;
     /// use cocoro::just_return;
     ///
-    /// just_return(10).yields::<Void>().assert_returns(10, ());
+    /// just_return(10).yields::<Void>().assert_returns((), 10);
     /// ```
     fn yields<Y2>(
         self,
@@ -199,9 +199,9 @@ pub trait Coro<I, Y, R>: Sized {
     ///     i
     /// })
     /// .returns::<Void>()
-    /// .assert_yields(1, ())
-    /// .assert_yields(2, ())
-    /// .assert_yields(3, ());
+    /// .assert_yields((), 1)
+    /// .assert_yields((), 2)
+    /// .assert_yields((), 3);
     /// ```
     fn returns<R2>(self) -> impl Coro<I, Y, R>
     where
@@ -237,9 +237,9 @@ pub trait Coro<I, Y, R>: Sized {
     /// .returns::<Void>()
     /// .map_yield(|i| i * 2)
     /// .returns::<Void>()
-    /// .assert_yields(2, ())
-    /// .assert_yields(4, ())
-    /// .assert_yields(6, ());
+    /// .assert_yields((), 2)
+    /// .assert_yields((), 4)
+    /// .assert_yields((), 6);
     /// ```
     fn map_yield<Y2, F>(self, f: F) -> MapYield<Y, Self, F>
     where
@@ -279,7 +279,7 @@ pub trait Coro<I, Y, R>: Sized {
     /// just_return(10)
     ///     .yields::<Void>()
     ///     .map_return(|x| x * 2)
-    ///     .assert_returns(20, ());
+    ///     .assert_returns((), 20);
     /// ```
     fn map_return<R2, F>(self, f: F) -> MapReturn<R, Self, F>
     where
@@ -319,12 +319,12 @@ pub trait Coro<I, Y, R>: Sized {
     /// })
     /// .returns::<Void>()
     /// .contramap_input(|()| words_iter.next().unwrap())
-    /// .assert_yields(3, ())
-    /// .assert_yields(6, ())
-    /// .assert_yields(9, ())
-    /// .assert_yields(12, ())
-    /// .assert_yields(15, ())
-    /// .assert_yields(18, ());
+    /// .assert_yields((), 3)
+    /// .assert_yields((), 6)
+    /// .assert_yields((), 9)
+    /// .assert_yields((), 12)
+    /// .assert_yields((), 15)
+    /// .assert_yields((), 18);
     /// ```
     fn contramap_input<I2, F>(self, f: F) -> ContramapInput<Self, F>
     where
@@ -358,9 +358,9 @@ pub trait Coro<I, Y, R>: Sized {
     ///
     /// just_return(yield_with(|()| 10))
     ///     .flatten()
-    ///     .assert_yields(10, ())
-    ///     .assert_yields(10, ())
-    ///     .assert_yields(10, ())
+    ///     .assert_yields((), 10)
+    ///     .assert_yields((), 10)
+    ///     .assert_yields((), 10)
     ///     .returns::<Void>();
     /// ```
     fn flatten<R2>(self) -> impl Coro<I, Y, R2>
@@ -397,12 +397,12 @@ pub trait Coro<I, Y, R>: Sized {
     ///     .compose(take(3))
     ///     .flat_map(|_| iota().compose(take(3)));
     /// count_to_three_twice
-    ///     .assert_yields(1, ())
-    ///     .assert_yields(2, ())
-    ///     .assert_yields(3, ())
-    ///     .assert_yields(1, ())
-    ///     .assert_yields(2, ())
-    ///     .assert_yields(3, ())
+    ///     .assert_yields((), 1)
+    ///     .assert_yields((), 2)
+    ///     .assert_yields((), 3)
+    ///     .assert_yields((), 1)
+    ///     .assert_yields((), 2)
+    ///     .assert_yields((), 3)
     ///     .assert_returns((), ());
     /// ```
     fn flat_map<R2, K2, F>(self, f: F) -> impl Coro<I, Y, R2>
@@ -452,7 +452,7 @@ pub trait Coro<I, Y, R>: Sized {
     ///     .and_then(|n| Yield(n * 2, from_fn(move |_: ()| Returned(n * 4))));
     ///
     /// // First coroutine returns 5, we yield 10, then return 20
-    /// coro.assert_yields(10, ()).assert_returns(20, ());
+    /// coro.assert_yields((), 10).assert_returns((), 20);
     /// ```
     ///
     /// Parser example showing linear input consumption:
@@ -483,9 +483,9 @@ pub trait Coro<I, Y, R>: Sized {
     ///
     /// // Resume with length=2, then two data bytes
     /// parser
-    ///     .assert_yields((), 2)     // consumed length byte, yielding boundary
-    ///     .assert_yields((), 10)    // consumed first data byte
-    ///     .assert_returns((2, (10, 20)), 20); // consume second data byte, get final result
+    ///     .assert_yields(2, ())     // consumed length byte, yielding boundary
+    ///     .assert_yields(10, ())    // consumed first data byte
+    ///     .assert_returns(20, (2, (10, 20))); // consume second data byte, get final result
     /// ```
     fn and_then<R2, K, S, F>(self, f: F) -> impl Coro<I, Y, R2>
     where
@@ -554,11 +554,11 @@ pub trait Coro<I, Y, R>: Sized {
     /// }
     /// iota()
     ///     .compose(sum())
-    ///     .assert_yields(1, ())
-    ///     .assert_yields(3, ())
-    ///     .assert_yields(6, ())
-    ///     .assert_yields(10, ())
-    ///     .assert_yields(15, ());
+    ///     .assert_yields((), 1)
+    ///     .assert_yields((), 3)
+    ///     .assert_yields((), 6)
+    ///     .assert_yields((), 10)
+    ///     .assert_yields((), 15);
     /// ```
     fn compose<Y2, K2>(self, other: K2) -> Compose<I, Y, Self, K2>
     where
@@ -672,9 +672,9 @@ pub trait Coro<I, Y, R>: Sized {
     ///     |r: (), _| Returned(r),
     /// );
     /// filtered
-    ///     .assert_yields(6, 5) // First number > 5
-    ///     .assert_yields(8, 7) // First number > 7
-    ///     .assert_yields(10, 9); // First number > 9
+    ///     .assert_yields(5, 6) // First number > 5
+    ///     .assert_yields(7, 8) // First number > 7
+    ///     .assert_yields(9, 10); // First number > 9
     /// ```
     ///
     /// For now, the source coroutine and the workers must be `FixedPointCoro`,
@@ -828,9 +828,9 @@ pub trait Coro<I, Y, R>: Sized {
     ///     j
     /// }))
     /// .returns::<Void>()
-    /// .assert_yields((1, 2), ((), ()))
-    /// .assert_yields((2, 4), ((), ()))
-    /// .assert_yields((3, 6), ((), ()));
+    /// .assert_yields(((), ()), (1, 2))
+    /// .assert_yields(((), ()), (2, 4))
+    /// .assert_yields(((), ()), (3, 6));
     /// ```
     ///
     /// Note that the input type of the zipped coroutine is a tuple of the
@@ -861,9 +861,9 @@ pub trait Coro<I, Y, R>: Sized {
     /// // Contramap the tuple of inputs ((), ()) to just ().
     /// .contramap_input(|()| ((), ()))
     /// .returns::<Void>()
-    /// .assert_yields((1, 2), ())
-    /// .assert_yields((2, 4), ())
-    /// .assert_yields((3, 6), ());
+    /// .assert_yields((), (1, 2))
+    /// .assert_yields((), (2, 4))
+    /// .assert_yields((), (3, 6));
     /// ```
     fn zip<I2, Y2>(
         self,
@@ -969,12 +969,12 @@ pub trait Coro<I, Y, R>: Sized {
     /// let a = ["a1", "a2"].into_coro().map_return(|()| "A");
     /// let b = ["b1", "b2", "b3"].into_coro().map_return(|()| "B");
     /// a.join(b)
-    ///     .assert_yields("a1", ())
-    ///     .assert_yields("b1", ())
-    ///     .assert_yields("a2", ())
-    ///     .assert_yields("b2", ())
-    ///     .assert_yields("b3", ())
-    ///     .assert_returns(("A", "B"), ());
+    ///     .assert_yields((), "a1")
+    ///     .assert_yields((), "b1")
+    ///     .assert_yields((), "a2")
+    ///     .assert_yields((), "b2")
+    ///     .assert_yields((), "b3")
+    ///     .assert_returns((), ("A", "B"));
     /// ```
     fn join<R2>(self, other: impl Coro<I, Y, R2>) -> impl Coro<I, Y, (R, R2)>
     where

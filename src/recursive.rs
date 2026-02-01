@@ -59,9 +59,9 @@ impl<I, Y, R> Coro<I, Y, R> for Recursive<'_, I, Y, R> {
 ///
 /// recursive(&|recur, n| Yield(n + 1, recur))
 ///     .returns::<Void>()
-///     .assert_yields(1, 0)
-///     .assert_yields(2, 1)
-///     .assert_yields(3, 2);
+///     .assert_yields(0, 1)
+///     .assert_yields(1, 2)
+///     .assert_yields(2, 3);
 /// ```
 pub fn recursive<'a, I, Y, R, F>(f: &'a F) -> impl FixedPointCoro<I, Y, R> + 'a
 where

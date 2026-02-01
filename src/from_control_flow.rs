@@ -50,10 +50,10 @@ pub struct FromControlFlow<F, I, Y, R> {
 ///         ControlFlow::Break(format!("Final input: {}", input))
 ///     }
 /// })
-/// .assert_yields("Input: 10, Countdown: 3".to_string(), 10)
-/// .assert_yields("Input: 20, Countdown: 2".to_string(), 20)
-/// .assert_yields("Input: 30, Countdown: 1".to_string(), 30)
-/// .assert_returns("Final input: 40".to_string(), 40);
+/// .assert_yields(10, "Input: 10, Countdown: 3".to_string())
+/// .assert_yields(20, "Input: 20, Countdown: 2".to_string())
+/// .assert_yields(30, "Input: 30, Countdown: 1".to_string())
+/// .assert_returns(40, "Final input: 40".to_string());
 /// ```
 pub fn from_control_flow<I, Y, R, F>(f: F) -> FromControlFlow<F, I, Y, R>
 where

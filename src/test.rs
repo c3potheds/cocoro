@@ -15,10 +15,10 @@ use crate::from_control_flow;
 fn just_yield_i32() {
     just_yield(10)
         .returns::<Void>()
-        .assert_yields(10, ())
-        .assert_yields(10, ())
-        .assert_yields(10, ())
-        .assert_yields(10, ());
+        .assert_yields((), 10)
+        .assert_yields((), 10)
+        .assert_yields((), 10)
+        .assert_yields((), 10);
 }
 
 #[test]
@@ -26,10 +26,10 @@ fn just_yield_i32_map_yield() {
     just_yield(10)
         .returns::<Void>()
         .map_yield(|x| x * 2)
-        .assert_yields(20, ())
-        .assert_yields(20, ())
-        .assert_yields(20, ())
-        .assert_yields(20, ());
+        .assert_yields((), 20)
+        .assert_yields((), 20)
+        .assert_yields((), 20)
+        .assert_yields((), 20);
 }
 
 #[test]
@@ -38,20 +38,20 @@ fn just_yield_i32_map_yield_map_twice() {
         .returns::<Void>()
         .map_yield(|x| x * 2)
         .map_yield(|x| x + 1)
-        .assert_yields(21, ())
-        .assert_yields(21, ())
-        .assert_yields(21, ())
-        .assert_yields(21, ());
+        .assert_yields((), 21)
+        .assert_yields((), 21)
+        .assert_yields((), 21)
+        .assert_yields((), 21);
 }
 
 #[test]
 fn just_yield_just_yield_i32() {
     just_yield(just_yield(10))
         .returns::<Void>()
-        .assert_yields(just_yield(10), ())
-        .assert_yields(just_yield(10), ())
-        .assert_yields(just_yield(10), ())
-        .assert_yields(just_yield(10), ());
+        .assert_yields((), just_yield(10))
+        .assert_yields((), just_yield(10))
+        .assert_yields((), just_yield(10))
+        .assert_yields((), just_yield(10));
 }
 
 #[test]
@@ -59,20 +59,20 @@ fn just_return_just_yield_flatten() {
     just_return(just_yield(10))
         .flatten()
         .returns::<Void>()
-        .assert_yields(10, ())
-        .assert_yields(10, ())
-        .assert_yields(10, ())
-        .assert_yields(10, ());
+        .assert_yields((), 10)
+        .assert_yields((), 10)
+        .assert_yields((), 10)
+        .assert_yields((), 10);
 }
 
 #[test]
 fn just_return_just_yield_map_yield_flatten() {
     just_return(just_yield(10).returns::<()>().map_yield(|x: i32| x * 2))
         .flatten()
-        .assert_yields(20, ())
-        .assert_yields(20, ())
-        .assert_yields(20, ())
-        .assert_yields(20, ());
+        .assert_yields((), 20)
+        .assert_yields((), 20)
+        .assert_yields((), 20)
+        .assert_yields((), 20);
 }
 
 #[test]
@@ -83,18 +83,18 @@ fn yield_cumulative_length_of_inputs() {
         length
     })
     .returns::<Void>()
-    .assert_yields(3, "foo")
-    .assert_yields(6, "bar")
-    .assert_yields(9, "baz");
+    .assert_yields("foo", 3)
+    .assert_yields("bar", 6)
+    .assert_yields("baz", 9);
 }
 
 #[test]
 fn test_from_control_flow_simple_yield() {
     from_control_flow(|x| Continue(x * 2))
         .returns::<Void>()
-        .assert_yields(2, 1)
-        .assert_yields(4, 2)
-        .assert_yields(6, 3); // This coro never returns
+        .assert_yields(1, 2)
+        .assert_yields(2, 4)
+        .assert_yields(3, 6); // This coro never returns
 }
 
 #[test]
@@ -110,16 +110,16 @@ fn test_from_control_flow_yield_then_break() {
         }
     });
 
-    coro.assert_yields(1, 0) // input 0, count becomes 1, yields 0+1 = 1
-        .assert_yields(3, 1) // input 1, count becomes 2, yields 1+2 = 3
-        .assert_returns("done", 2); // input 2, count becomes 3, breaks
+    coro.assert_yields(0, 1) // input 0, count becomes 1, yields 0+1 = 1
+        .assert_yields(1, 3) // input 1, count becomes 2, yields 1+2 = 3
+        .assert_returns(2, "done"); // input 2, count becomes 3, breaks
 }
 
 #[test]
 fn test_from_control_flow_immediate_break() {
     // Specify Continue type for ControlFlow when it's not used.
     let coro = from_control_flow(|_x: ()| Break(42_i32)).yields::<Void>();
-    coro.assert_returns(42, ());
+    coro.assert_returns((), 42);
 }
 
 #[test]
@@ -145,20 +145,20 @@ fn test_from_control_flow_non_trivial_types() {
 
     coro.assert_yields(
         MyStruct {
-            val: "hello processed".to_string(),
-            num: 10 + 1,
-        },
-        MyStruct {
             val: "hello".to_string(),
             num: 10,
         },
+        MyStruct {
+            val: "hello processed".to_string(),
+            num: 10 + 1,
+        },
     )
     .assert_returns(
-        "Final count: 2".to_string(),
         MyStruct {
             val: "world".to_string(),
             num: 20,
         },
+        "Final count: 2".to_string(),
     );
 }
 
@@ -167,9 +167,9 @@ fn test_from_control_flow_non_trivial_types() {
 fn test_take_fewer_than_available() {
     yield_with(|()| 1)
         .compose(take(3))
-        .assert_yields(1, ())
-        .assert_yields(1, ())
-        .assert_yields(1, ())
+        .assert_yields((), 1)
+        .assert_yields((), 1)
+        .assert_yields((), 1)
         .assert_returns((), ());
 }
 
@@ -177,9 +177,9 @@ fn test_take_fewer_than_available() {
 fn test_take_more_than_available() {
     from_fn(|()| Yield(1, from_fn(|()| Yield(2, just_return("done")))))
         .compose(take(5).map_return(|_| "break"))
-        .assert_yields(1, ())
-        .assert_yields(2, ())
-        .assert_returns("done", ());
+        .assert_yields((), 1)
+        .assert_yields((), 2)
+        .assert_returns((), "done");
 }
 
 #[test]
@@ -192,14 +192,14 @@ fn test_take_from_empty_coro_returns() {
     just_return("empty")
         .yields::<Void>()
         .compose(take(5).map_return(|_| "nonempty"))
-        .assert_returns("empty", ());
+        .assert_returns((), "empty");
 }
 
 #[test]
 fn test_take_from_empty_coro_yields_nothing() {
     let coro = just_return("empty").yields::<Void>();
     coro.compose(take(5).map_return(|_| "nonempty"))
-        .assert_returns("empty", ());
+        .assert_returns((), "empty");
 }
 
 #[test]
@@ -210,9 +210,9 @@ fn iota_take_3() {
         i
     })
     .compose(take(3))
-    .assert_yields(1, ())
-    .assert_yields(2, ())
-    .assert_yields(3, ())
+    .assert_yields((), 1)
+    .assert_yields((), 2)
+    .assert_yields((), 3)
     .assert_returns((), ());
 }
 
@@ -230,8 +230,8 @@ fn map_yield_preserves_fixed_point() {
     // The fact that this compiles proves MapYield preserves FixedPointCoro
     FixedPointCoro::<(), i32, Void>::fixed_point(coro)
         .returns::<Void>()
-        .assert_yields(84, ())
-        .assert_yields(84, ());
+        .assert_yields((), 84)
+        .assert_yields((), 84);
 }
 
 #[test]
@@ -248,8 +248,8 @@ fn map_return_preserves_fixed_point() {
     // The fact that this compiles proves MapReturn preserves FixedPointCoro
     FixedPointCoro::<(), i32, &str>::fixed_point(coro)
         .returns::<&str>()
-        .assert_yields(42, ())
-        .assert_yields(42, ());
+        .assert_yields((), 42)
+        .assert_yields((), 42);
 }
 
 #[test]
@@ -267,8 +267,8 @@ fn compose_preserves_fixed_point() {
     // compose yields from the second coroutine first, then the first
     FixedPointCoro::<(), i32, Void>::fixed_point(composed)
         .returns::<Void>()
-        .assert_yields(20, ())
-        .assert_yields(20, ());
+        .assert_yields((), 20)
+        .assert_yields((), 20);
 }
 
 #[test]
@@ -286,8 +286,8 @@ fn contramap_input_preserves_fixed_point() {
     // FixedPointCoro
     FixedPointCoro::<(), i32, Void>::fixed_point(coro)
         .returns::<Void>()
-        .assert_yields(42, ())
-        .assert_yields(42, ());
+        .assert_yields((), 42)
+        .assert_yields((), 42);
 }
 
 #[test]
@@ -296,8 +296,8 @@ fn and_then_basic() {
 
     just_return(5)
         .and_then(|n| Yield(n * 2, just_return(n * 3)))
-        .assert_yields(10, ())
-        .assert_returns(15, ());
+        .assert_yields((), 10)
+        .assert_returns((), 15);
 }
 
 #[test]
@@ -308,9 +308,9 @@ fn and_then_with_multiple_yields() {
         .and_then(|n| {
             Yield(n, from_fn(move |_: ()| Yield(n * 2, just_return(n * 3))))
         })
-        .assert_yields(3, ())
-        .assert_yields(6, ())
-        .assert_returns(9, ());
+        .assert_yields((), 3)
+        .assert_yields((), 6)
+        .assert_returns((), 9);
 }
 
 #[test]
@@ -321,7 +321,7 @@ fn and_then_chaining() {
     just_return(2)
         .and_then(|n| Yield(n, just_return(n + 2)))
         .and_then(|n| Yield(n, just_return(n * 3)))
-        .assert_yields(2, ())
-        .assert_yields(4, ())
-        .assert_returns(12, ());
+        .assert_yields((), 2)
+        .assert_yields((), 4)
+        .assert_returns((), 12);
 }

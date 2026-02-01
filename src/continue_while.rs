@@ -20,10 +20,10 @@ use crate::with_state;
 /// (1..)
 ///     .into_coro()
 ///     .compose(continue_while(|&n| n < 5).map_return(|_| ()))
-///     .assert_yields(1, ())
-///     .assert_yields(2, ())
-///     .assert_yields(3, ())
-///     .assert_yields(4, ())
+///     .assert_yields((), 1)
+///     .assert_yields((), 2)
+///     .assert_yields((), 3)
+///     .assert_yields((), 4)
 ///     .assert_returns((), ());
 /// ```
 ///
@@ -42,8 +42,8 @@ use crate::with_state;
 ///         continue_while(|s: &&str| s.chars().all(|c| c.is_alphabetic()))
 ///             .map_return(|_| ()),
 ///     )
-///     .assert_yields("hello", ())
-///     .assert_yields("world", ())
+///     .assert_yields((), "hello")
+///     .assert_yields((), "world")
 ///     .assert_returns((), ());
 /// ```
 pub fn continue_while<T, F>(f: F) -> impl FixedPointCoro<T, T, T>
