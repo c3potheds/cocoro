@@ -114,6 +114,24 @@ Differences allowed:
 
 ## Git Workflow
 
+### Feature Branch Workflow
+**IMPORTANT**: Always work on feature branches, never commit directly to `main`. This keeps the main branch clean and makes it easy to sync with GitHub.
+
+Workflow for new features:
+1. Ensure main is up to date: `git checkout main && git pull`
+2. Create a feature branch: `git checkout -b feature/descriptive-name`
+3. Make changes and commit to the feature branch
+4. Push the feature branch: `git push -u origin feature/descriptive-name`
+5. Create a pull request on GitHub for review
+6. After PR is merged, sync main: `git checkout main && git pull`
+7. Delete the local feature branch: `git branch -d feature/descriptive-name`
+
+Branch naming conventions:
+- `feature/name` - for new features
+- `fix/name` - for bug fixes
+- `docs/name` - for documentation updates
+- `refactor/name` - for refactoring work
+
 ### Commit Guidelines
 - **Each commit must pass tests independently** - verify with `cargo test` at each commit
 - When doing interactive rebases, test each commit after rebasing
