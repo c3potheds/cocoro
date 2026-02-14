@@ -2,10 +2,10 @@ use core::marker::PhantomData;
 
 use either::Either;
 
+use crate::cocoro::Cocoro;
 use crate::coro::Coro;
 use crate::suspend::Suspend;
 use crate::suspended::Suspended;
-use crate::suspended::SuspendedVisitor;
 
 pub struct FlattenImpl<Y, Outer, Inner> {
     outer: Outer,
@@ -42,7 +42,7 @@ where
             _phantom: PhantomData<(Y, R, Inner)>,
         }
 
-        impl<I, Y, R, Inner, Outer> SuspendedVisitor<I, Y, Inner, Outer>
+        impl<I, Y, R, Inner, Outer> Cocoro<I, Y, Inner, Outer>
             for OuterVisitor<I, Y, R, Inner>
         where
             I: Copy,
@@ -65,7 +65,7 @@ where
                 }
 
                 impl<I, Y, R, Outer, InnerCoro, InnerNext>
-                    SuspendedVisitor<I, Y, R, InnerNext>
+                    Cocoro<I, Y, R, InnerNext>
                     for InnerVisitor<I, Y, R, Outer, InnerCoro>
                 where
                     I: Copy,

@@ -1,14 +1,6 @@
+use crate::cocoro::Cocoro;
 use crate::coro::Coro;
 use crate::suspend::Suspend;
-
-pub trait SuspendedVisitor<I, Y, R, N>
-where
-    N: Coro<I, Y, R>,
-{
-    type Out;
-    fn on_yield(self, y: Y, next: N) -> Self::Out;
-    fn on_return(self, r: R) -> Self::Out;
-}
 
 /// A trait for types that represent a suspended coroutine.
 ///
@@ -24,16 +16,13 @@ where
 /// implements `Suspended` but doesn't ever invoke `on_return()` on its visitor.
 pub trait Suspended<I, Y, R>: Sized {
     type Next: Coro<I, Y, R>;
-    fn visit<X>(
-        self,
-        visitor: impl SuspendedVisitor<I, Y, R, Self::Next, Out = X>,
-    ) -> X;
+    fn visit<X>(self, visitor: impl Cocoro<I, Y, R, Self::Next, Out = X>) -> X;
 
     fn into_enum(self) -> Suspend<Y, R, Self::Next> {
         self.visit({
             use Suspend::*;
             struct AsEnum;
-            impl<I, Y, R, N> SuspendedVisitor<I, Y, R, N> for AsEnum
+            impl<I, Y, R, N> Cocoro<I, Y, R, N> for AsEnum
             where
                 N: Coro<I, Y, R>,
             {
