@@ -11,7 +11,7 @@ The `cocoro` crate is an experimental Rust library implementing stackless corout
 ### Central Traits
 - `Coro<I, Y, R>`: Main coroutine trait with `resume(self, input: I) -> Self::Suspend`
 - `Suspended<I, Y, R>`: Abstraction over suspended states (yield/return)
-- `SuspendedVisitor<I, Y, R, N>`: Visitor pattern for handling suspended states
+- `Cocoro<I, Y, R, N>`: Decides what to do next based on how the `Coro` suspended
 
 ### Key Design Principles
 - Coroutines consume `self` on resume, preventing use after return

@@ -1,6 +1,6 @@
+use crate::cocoro::Cocoro;
 use crate::coro::Coro;
 use crate::suspended::Suspended;
-use crate::suspended::SuspendedVisitor;
 use crate::void::Void;
 
 /// A coroutine that just returns a value.
@@ -17,10 +17,7 @@ pub struct Returned<T>(pub T);
 
 impl<I, Y, R> Suspended<I, Y, R> for Returned<R> {
     type Next = Void;
-    fn visit<X>(
-        self,
-        visitor: impl SuspendedVisitor<I, Y, R, Void, Out = X>,
-    ) -> X {
+    fn visit<X>(self, visitor: impl Cocoro<I, Y, R, Void, Out = X>) -> X {
         visitor.on_return(self.0)
     }
 }

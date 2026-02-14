@@ -1,6 +1,6 @@
+use crate::cocoro::Cocoro;
 use crate::coro::Coro;
 use crate::suspended::Suspended;
-use crate::suspended::SuspendedVisitor;
 
 /// The state of a `Coro` coroutine after a call to `resume()` has finished.
 ///
@@ -51,10 +51,7 @@ where
     N: Coro<I, Y, R>,
 {
     type Next = N;
-    fn visit<X>(
-        self,
-        visitor: impl SuspendedVisitor<I, Y, R, N, Out = X>,
-    ) -> X {
+    fn visit<X>(self, visitor: impl Cocoro<I, Y, R, N, Out = X>) -> X {
         match self {
             Yield(y, next) => visitor.on_yield(y, next),
             Return(r) => visitor.on_return(r),

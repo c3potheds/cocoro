@@ -10,7 +10,7 @@ coroutine can yield arbitrarily many times but may only return once.
 In this crate, the core coroutine trait looks like:
 
 ```rust
-pub trait SuspendedVisitor<I, Y, R, N>
+pub trait Cocoro<I, Y, R, N>
 where
     N: Coro<I, Y, R>,
 {
@@ -23,7 +23,7 @@ pub trait Suspended<I, Y, R> {
     type Next: Coro<I, Y, R>;
     fn visit<X>(
         self,
-        visitor: impl SuspendedVisitor<I, Y, R, Self::Next, Out = X>,
+        visitor: impl Cocoro<I, Y, R, Self::Next, Out = X>,
     ) -> X;
 }
 
@@ -33,6 +33,15 @@ pub trait Coro<I, Y, R = ()>: Sized {
     fn resume(self, input: I) -> Self::Suspend;
 }
 ```
+
+This divides up the full execution flow of a coroutine into these steps:
+
+  * A `Coro` is `resume()`'d and runs until it suspends.
+  * A `Cocoro` (the dual of a `Coro`) decides what to do next.
+
+The `Cocoro` can choose to "continue" the coroutine by calling the `Coro` it
+receives in `on_yield()`, or it can "return early" by returning a value with its
+`Out` type.
 
 Note the following differences from `std::ops::Coroutine`:
 
@@ -57,6 +66,14 @@ pub enum Suspend<Y, R, N> {
 
 The `Yield` and `Return` variants are imported into the crate's root
 namespace, so they can be used without the `Suspend::` prefix.
+
+If not using the `Suspend` enum, however, the `Cocoro` trait abstracts over what
+otherwise might be written as a `match` expression. It implements the "visitor
+pattern", handling *either* `on_yield()` *or* `on_return()` and deciding what
+to do next based on which method was called. The `Out` parameter of the trait
+determines the return value of the final computation, which you can think of as
+the type that the `match` expression would evaluate to if using a `match` on the
+`Suspend` enum.
 
 In addition, the `Coro` trait provides a number of default combinators that
 should feel familiar to anyone working with `Iterator`, for example:
@@ -112,7 +129,7 @@ of a coroutine isn't known (e.g. because it's not constrained by bounds on
 a function parameter or on an `impl Coro` return type from the function that
 the coroutine came from), the `Suspended` trait provides a `visit` method
 that can be converted to a `Suspend` enum to pattern-match against, or
-visited directly with a `SuspendedVisitor`.
+visited directly with a `Cocoro`.
 
 It's more common to use helper functions and combinators to create
 coroutines, rather than implement the `Coro` trait directly.
@@ -264,16 +281,21 @@ can `contramap_input()` with a function that takes a different input type
 and returns the original input type, and get a new coroutine that uses the
 `contramap()` function's input type as its input type.
 
-The `flatten()` combinator corresponds to the `join` operation on the monad
-over the return type. With it and `map_return()`, the `flat_map()`
-combinator can be implemented, corresponding to the `bind` operation on the
-monad.
+One can define a monad when the input type implements `Copy`: the
+`flatten()` combinator corresponds to the `join` operation on the monad over the
+return type. With it and `map_return()`, the `flat_map()` combinator can be
+implemented, corresponding to the `bind` operation on the monad.
 
 In order to complete the monad axioms, the `return` operation is implemented
 with the `JustReturn` wrapper struct, which is a coroutine that can take
 anything as an input, never yields, and always returns with the value it was
 constructed with. Together, the `JustReturn` struct and `flat_map()`
 combinator abide by the monad laws for the functor over the return type.
+
+However, the monad implementation is weakened by the requirement that the input
+must implement `Copy`. A more flexible construction can be found in the
+`and_then()` combinator, which takes a function that returns a `Suspended` value
+instead of a `Coro`.
 
 There is no monad implementation for the functor over the yielded type, but
 the `just_yield` struct can be thought of as a `pure` operation for an
@@ -298,13 +320,9 @@ coroutines. As another layer to the pun, "cocoro" sounds like "kokoro",
 which is the Japanese word for "heart", with all the attendant connotations
 of mind, spirit, and core-ness.
 
-I was also vaguely gesturing at the idea of co- as a prefix for mathematical
-duals, especially in the context of category theory. Although a coroutine is
-not the categorical dual of a routine in any strict sense, one can entertain
-the concept of a "co-routine" as the dual of a "routine", and thus a
-co-coroutine as something... routine.
-
-But also the name happened to be free on crates.io.
+The `Cocoro` trait is so named because it is dual to a `Coro`: what a `Coro`
+emits, a `Cocoro` consumes. This duality is key to the design of the crate,
+which I want to highlight in the naming.
 
 ## Why is the `resume()` method consuming `self`?
 

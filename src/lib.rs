@@ -440,6 +440,7 @@
 #![cfg_attr(docsrs, feature(doc_notable_trait))]
 
 mod and_then;
+mod cocoro;
 mod compose;
 mod continue_while;
 mod contramap_input;

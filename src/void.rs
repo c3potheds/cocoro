@@ -1,6 +1,6 @@
+use crate::cocoro::Cocoro;
 use crate::coro::Coro;
 use crate::suspended::Suspended;
-use crate::suspended::SuspendedVisitor;
 
 /// A stand-in for the 'never' type `!`, which can be used as the `Next` type
 /// for a coroutine that will never yield again.
@@ -59,10 +59,7 @@ impl Void {
 
 impl<T, R, I> Suspended<T, R, I> for Void {
     type Next = Void;
-    fn visit<X>(
-        self,
-        _: impl SuspendedVisitor<T, R, I, Self::Next, Out = X>,
-    ) -> X {
+    fn visit<X>(self, _: impl Cocoro<T, R, I, Self::Next, Out = X>) -> X {
         unreachable!()
     }
 }

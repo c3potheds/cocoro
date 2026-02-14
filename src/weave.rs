@@ -4,8 +4,8 @@ use either::Either;
 
 use crate::Coro;
 use crate::FixedPointCoro;
+use crate::cocoro::Cocoro;
 use crate::suspended::Suspended;
-use crate::suspended::SuspendedVisitor;
 
 /// Weaves two fixed-point coroutines together bidirectionally, feeding the
 /// yields of one as inputs to the other until one of them returns.
@@ -377,7 +377,7 @@ where
     // `FlattenImpl::Next` associated type when using coroutines derived from
     // `flatten()` with `weave_cps()`.
     struct VisitA<R2, B, C>(B, C, PhantomData<R2>);
-    impl<I, Y, R1, R2, A, B, C> SuspendedVisitor<I, Y, R1, A> for VisitA<R2, B, C>
+    impl<I, Y, R1, R2, A, B, C> Cocoro<I, Y, R1, A> for VisitA<R2, B, C>
     where
         A: Coro<I, Y, R1>,
         B: Coro<Y, I, R2>,
@@ -399,7 +399,7 @@ where
     }
 
     struct VisitB<R1, A, C>(A, C, PhantomData<R1>);
-    impl<I, Y, R1, R2, A, B, C> SuspendedVisitor<Y, I, R2, B> for VisitB<R1, A, C>
+    impl<I, Y, R1, R2, A, B, C> Cocoro<Y, I, R2, B> for VisitB<R1, A, C>
     where
         A: Coro<I, Y, R1>,
         B: Coro<Y, I, R2>,
