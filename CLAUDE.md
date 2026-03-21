@@ -97,6 +97,39 @@ Due to generic design over `I`, `Y`, `R` parameters, type annotations are often 
   implementations should be `I`, `Y`, `R`.
 - Always run `cargo +nightly fmt` before committing.
 
+### Tuple struct field access
+
+In methods that consume `self`, destructure tuple struct fields into named local
+variables at the top of the method body rather than accessing them as `self.0`,
+`self.1`, etc.:
+
+```rust
+// Preferred
+fn on_yield(self, y: Y, next: N) -> B {
+    let Self(inner, f) = self;
+    f(inner.on_yield(y, next))
+}
+
+// Avoid
+fn on_yield(self, y: Y, next: N) -> B {
+    (self.1)(self.0.on_yield(y, next))
+}
+```
+
+### Type annotation style
+
+- **Avoid turbofishes.** When the compiler needs a type annotation, prefer to
+  provide it through a type bound on a variable declaration (`let x: T = ...`),
+  a lambda parameter (`|x: T|`), or a function return type rather than a
+  turbofish (`::<T>`). Turbofishes are harder to read and often indicate that a
+  type parameter on a function or struct is unnecessary (e.g. because it only
+  appears in a `where` clause but not in the arguments or return type).
+- **Omit unnecessary local type annotations.** Don't annotate the types of
+  local variables or lambda parameters unless the code is unreadable without
+  them. Type annotations added while debugging compiler errors should be removed
+  once everything compiles. (This preference is weaker than the distaste for
+  turbofishes.)
+
 ## Documentation
 
 ### Documentation Sync

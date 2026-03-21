@@ -27,7 +27,8 @@ where
     type Next = Self;
     type Suspend = Yielded<T, Self>;
     fn resume(self, _: I) -> Self::Suspend {
-        Yielded(self.0, self)
+        let Self(t) = self;
+        Yielded(t, Self(t))
     }
 }
 
