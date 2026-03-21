@@ -18,7 +18,8 @@ pub struct Returned<T>(pub T);
 impl<I, Y, R> Suspended<I, Y, R> for Returned<R> {
     type Next = Void;
     fn visit<X>(self, visitor: impl Cocoro<I, Y, R, Void, Out = X>) -> X {
-        visitor.on_return(self.0)
+        let Self(r) = self;
+        visitor.on_return(r)
     }
 }
 
@@ -27,7 +28,8 @@ impl<Y, T, I> Coro<I, Y, T> for JustReturn<T> {
     type Suspend = Returned<T>;
 
     fn resume(self, _: I) -> Self::Suspend {
-        Returned(self.0)
+        let Self(t) = self;
+        Returned(t)
     }
 }
 
