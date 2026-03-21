@@ -481,6 +481,7 @@ pub use Suspend::Return;
 pub use Suspend::Yield;
 pub use and_then::AndThen;
 pub use cocoro::Cocoro;
+pub use cocoro::MapCocoro;
 pub use compose::Compose;
 pub use continue_while::continue_while;
 pub use contramap_input::ContramapInput;
