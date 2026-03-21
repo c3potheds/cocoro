@@ -43,4 +43,86 @@ where
     type Out;
     fn on_yield(self, y: Y, next: N) -> Self::Out;
     fn on_return(self, r: R) -> Self::Out;
+
+    /// Transform the output of this `Cocoro` by applying `f` to whatever
+    /// `on_yield` or `on_return` produces.
+    ///
+    /// This is the primary combinator on `Cocoro`, covariant in `Out`. It
+    /// mirrors the role of `map` on `Iterator` or `Result`: it says nothing
+    /// about *how* the coroutine is consumed, only about *what is done with
+    /// the result*.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use cocoro::Cocoro;
+    /// use cocoro::Coro;
+    /// use cocoro::Suspend;
+    /// use cocoro::Suspend::Return;
+    /// use cocoro::Suspend::Yield;
+    /// use cocoro::Suspended;
+    ///
+    /// // A minimal stream that yields exactly one char then returns.
+    /// // Implementing `Coro` inline gives us a concrete `Next` type,
+    /// // which makes `IsDigit.map(...)` unambiguous.
+    /// struct OneChar(Option<char>);
+    /// impl Coro<(), char, ()> for OneChar {
+    ///     type Next = Self;
+    ///     type Suspend = Suspend<char, (), Self>;
+    ///     fn resume(self, _: ()) -> Self::Suspend {
+    ///         match self.0 {
+    ///             Some(c) => Yield(c, OneChar(None)),
+    ///             None => Return(()),
+    ///         }
+    ///     }
+    /// }
+    ///
+    /// struct IsDigit;
+    /// impl Cocoro<(), char, (), OneChar> for IsDigit {
+    ///     type Out = bool;
+    ///     fn on_yield(self, c: char, _: OneChar) -> bool {
+    ///         c.is_ascii_digit()
+    ///     }
+    ///     fn on_return(self, _: ()) -> bool {
+    ///         false
+    ///     }
+    /// }
+    ///
+    /// // Use map() to convert the bool to a string label.
+    /// let label = IsDigit.map(|b| if b { "digit" } else { "other" });
+    /// let result = OneChar(Some('7')).resume(()).visit(label);
+    /// assert_eq!(result, "digit");
+    /// ```
+    fn map<B, F>(self, f: F) -> MapCocoro<Self, F>
+    where
+        Self: Sized,
+        F: FnOnce(Self::Out) -> B,
+    {
+        MapCocoro(self, f)
+    }
+}
+
+/// A `Cocoro` that transforms the output of an inner `Cocoro` with a function.
+///
+/// Produced by [`Cocoro::map`]; see its documentation for details.
+#[derive(Clone)]
+pub struct MapCocoro<C, F>(C, F);
+
+impl<I, Y, R, N, C, F, B> Cocoro<I, Y, R, N> for MapCocoro<C, F>
+where
+    N: Coro<I, Y, R>,
+    C: Cocoro<I, Y, R, N>,
+    F: FnOnce(C::Out) -> B,
+{
+    type Out = B;
+
+    fn on_yield(self, y: Y, next: N) -> B {
+        let Self(inner, f) = self;
+        f(inner.on_yield(y, next))
+    }
+
+    fn on_return(self, r: R) -> B {
+        let Self(inner, f) = self;
+        f(inner.on_return(r))
+    }
 }
