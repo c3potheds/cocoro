@@ -1,3 +1,5 @@
+use core::marker::PhantomData;
+
 use Suspend::Return;
 use Suspend::Yield;
 
@@ -11,6 +13,7 @@ use crate::map_yield::MapYield;
 use crate::metaprogramming::Is;
 use crate::suspend::Suspend;
 use crate::suspended::Suspended;
+use crate::typed_as::TypedAs;
 use crate::void::Void;
 use crate::zip::Zip;
 
@@ -208,6 +211,53 @@ pub trait Coro<I, Y, R>: Sized {
         R2: Is<Type = R>,
     {
         self
+    }
+
+    /// Wraps `self` in [`TypedAs<Self, I, Y, R>`](crate::typed_as::TypedAs),
+    /// a concrete struct that encodes all three of `I`, `Y`, and `R` as type
+    /// parameters.
+    ///
+    /// This is useful for type inference in method chains where `I` or `R`
+    /// cannot be determined from the coroutine's struct type alone (e.g.
+    /// `JustYield<T>`, `Compose`, `ContramapInput` leave `I` and `R` as free
+    /// parameters). A single `.typed_as::<I, Y, R>()` call pins all three at
+    /// the call site and propagates them forward through the chain via the
+    /// concrete wrapper type — no UFCS or additional annotations needed.
+    ///
+    /// Unlike [`returns`](Coro::returns), which returns an opaque
+    /// `impl Coro<I, Y, R>` that erases `Next`, `typed_as` preserves the
+    /// concrete `Next` type: `TypedAs<C, I, Y, R>::Next` is
+    /// `TypedAs<C::Next, I, Y, R>`. If `C` is [`FixedPointCoro`], so is
+    /// `TypedAs<C, I, Y, R>`.
+    ///
+    /// [`FixedPointCoro`]: crate::fixed_point::FixedPointCoro
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use cocoro::Coro;
+    /// use cocoro::CoroAssertions;
+    /// use cocoro::FixedPointCoro;
+    /// use cocoro::Void;
+    /// use cocoro::just_yield;
+    ///
+    /// // typed_as::<I, Y, R>() pins all three types at once, enabling the
+    /// // rest of the chain to infer types without UFCS.
+    /// just_yield(42)
+    ///     .typed_as::<(), i32, Void>()
+    ///     .map_yield(|x| x * 2)
+    ///     .fixed_point()
+    ///     .assert_yields((), 84)
+    ///     .assert_yields((), 84);
+    /// ```
+    fn typed_as<I2, Y2, R2>(self) -> TypedAs<Self, I, Y, R>
+    where
+        I2: Is<Type = I>,
+        Y2: Is<Type = Y>,
+        R2: Is<Type = R>,
+        Self: Sized,
+    {
+        TypedAs(self, PhantomData)
     }
 
     /// Calls the provided closure on each element *yielded* from this
