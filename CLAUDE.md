@@ -46,10 +46,17 @@ cargo +nightly fmt       # Format code (uses nightly-only features for docstring
 
 ### Documentation
 ```bash
-cargo doc --no-deps                                    # Build docs (stable, no notable_trait)
-RUSTDOCFLAGS="--cfg docsrs" cargo +nightly doc --no-deps  # Build docs with notable_trait feature
-open target/doc/cocoro/index.html                     # Open docs in browser
+RUSTDOCFLAGS="-D warnings" cargo doc --no-deps             # Build docs, failing on any warnings
+RUSTDOCFLAGS="--cfg docsrs" cargo +nightly doc --no-deps   # Build docs with notable_trait feature
+open target/doc/cocoro/index.html                          # Open docs in browser
 ```
+
+Always run `RUSTDOCFLAGS="-D warnings" cargo doc --no-deps` before committing documentation
+changes. This catches unresolved intra-doc links and other rustdoc warnings that the CI will
+reject. Common pitfalls:
+- Intra-doc links like `` [`Foo`] `` only resolve if `Foo` is in scope at the call site (imported
+  or defined in the same module). Use `` [`Foo`](crate::Foo) `` to link across modules while
+  keeping the short display name.
 
 The crate uses `#[doc(notable_trait)]` to highlight `Coro` and `FixedPointCoro` implementations in documentation. This feature is nightly-only, so:
 - The crate compiles on stable Rust without issues
