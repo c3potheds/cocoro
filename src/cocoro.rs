@@ -1,15 +1,17 @@
 use crate::coro::Coro;
 
-/// An eliminator for [`Suspend`]: a first-class representation of case
-/// analysis on a suspended coroutine step.
+/// An eliminator for [`Suspend`](crate::Suspend): a first-class representation
+/// of case analysis on a suspended coroutine step.
 ///
 /// Where [`Coro`] *produces* values by yielding and eventually returning,
 /// `Cocoro` *consumes* one step of that stream: it handles the two possible
-/// outcomes of [`Suspend`] — a yielded value with the next coroutine state, or
-/// a final return value — and produces some output of type `Out`.
+/// outcomes of [`Suspend`](crate::Suspend) — a yielded value with the next
+/// coroutine state, or a final return value — and produces some output of type
+/// `Out`.
 ///
 /// This trait can be thought of as a generalization of the `match` expression
-/// on a [`Suspend`] enum, where the `Out` type is the type that the `match`
+/// on a [`Suspend`](crate::Suspend) enum, where the `Out` type is the type
+/// that the `match`
 /// expression evaluates to, and the `on_yield()` and `on_return()`
 /// implementations are case handlers for the `Yield` and `Return` variants.
 ///

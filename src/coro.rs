@@ -56,9 +56,9 @@ use crate::zip::Zip;
 ///
 /// # Testing Coroutines
 ///
-/// The [`CoroAssertions`] extension trait provides `assert_yields()` and
-/// `assert_returns()` methods for testing coroutines. Import this trait in
-/// your tests to access these assertion methods:
+/// The [`CoroAssertions`](crate::CoroAssertions) extension trait provides
+/// `assert_yields()` and `assert_returns()` methods for testing coroutines.
+/// Import this trait in your tests to access these assertion methods:
 ///
 /// ```rust
 /// use cocoro::Coro;
