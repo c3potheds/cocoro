@@ -19,17 +19,14 @@
 //!
 //! ```text
 //! Cocoro level — primitive parsers: single dispatch on one suspension event
-//!     Digit              accepts one ASCII digit character
 //!     Just(ch)           accepts one exact character
 //!     Keyword(kw)        accepts a keyword with word-boundary check
 //!     number_p()         folds digits into i64 via take_while_fold
 //!     ident_p()          folds alphanumeric chars into String via take_while_fold
 //!
 //! PResult level — composition: thread the leftover stream through sequences
-//!     then / skip / skip_left    sequential composition
-//!     or                         backtracking alternation (clones the stream)
-//!     repeated                   zero or more repetitions
-//!     padded                     skip leading whitespace
+//!     map_output         transform the parsed value (built on Cocoro::map)
+//!     or                 backtracking alternation (clones the stream)
 //! ```
 //!
 //! Recursive grammar rules (`expr`, `let_expr`, `add_expr`, `mul_expr`,
@@ -39,7 +36,7 @@
 //! Parser-combinator values are invoked with `.parse(input)`; grammar
 //! functions call each other directly.
 
-#![allow(dead_code)]
+// #![allow(dead_code)]
 
 use std::fmt;
 
@@ -202,42 +199,6 @@ where
         })
     }
 
-    /// Parse `self` then `other`, returning both outputs as a tuple.
-    fn then<Q: Parser<S>>(
-        self,
-        other: Q,
-    ) -> impl Parser<S, Output = (Self::Output, Q::Output)> + Clone
-    where
-        Self: Clone,
-        Q: Clone,
-    {
-        Then(self, other)
-    }
-
-    /// Parse `self` then `other`, discarding `other`'s output.
-    fn skip<Q: Parser<S>>(
-        self,
-        other: Q,
-    ) -> impl Parser<S, Output = Self::Output> + Clone
-    where
-        Self: Clone,
-        Q: Clone,
-    {
-        Skip(self, other)
-    }
-
-    /// Parse `self` then `other`, discarding `self`'s output.
-    fn skip_left<Q: Parser<S>>(
-        self,
-        other: Q,
-    ) -> impl Parser<S, Output = Q::Output> + Clone
-    where
-        Self: Clone,
-        Q: Clone,
-    {
-        SkipLeft(self, other)
-    }
-
     /// Try `self`; if it fails, restore the stream and try `other`.
     ///
     /// Backtracking is implemented by cloning `Input<S>` before trying the
@@ -254,28 +215,11 @@ where
     {
         Or(self, other)
     }
-
-    /// Zero or more repetitions of `self`, returned as a `Vec`.
-    fn repeated(self) -> impl Parser<S, Output = Vec<Self::Output>> + Clone
-    where
-        S: Clone,
-        Self: Clone,
-    {
-        Repeated(self)
-    }
-
-    /// Skip leading whitespace, then run `self`.
-    fn padded(self) -> impl Parser<S, Output = Self::Output> + Clone
-    where
-        Self: Clone,
-    {
-        Padded(self)
-    }
 }
 
 /// [`MapCocoro`] is automatically a `Parser` when its function maps
 /// `PResult<P::Output>` to `PResult<B>`. This makes `map_output` compose
-/// with `or`, `then`, and other combinators without a bespoke struct.
+/// with `or` and other combinators without a bespoke struct.
 impl<S, P, F, B> Parser<S> for MapCocoro<P, F>
 where
     S: Coro<(), char, (), Next = S>,
@@ -288,111 +232,6 @@ where
 // ============================================================================
 // PResult-level combinators
 // ============================================================================
-
-#[derive(Clone)]
-struct Then<P, Q>(P, Q);
-
-impl<S, P, Q> Cocoro<(), char, (), S> for Then<P, Q>
-where
-    S: Coro<(), char, (), Next = S>,
-    P: Parser<S>,
-    Q: Parser<S>,
-{
-    type Out = PResult<(P::Output, Q::Output), S>;
-
-    fn on_yield(self, ch: char, next: S) -> Self::Out {
-        let Self(p, q) = self;
-        let (a, rest) = p.on_yield(ch, next)?;
-        let (b, rest) = q.parse(rest)?;
-        Ok(((a, b), rest))
-    }
-
-    fn on_return(self, r: ()) -> Self::Out {
-        let Self(p, q) = self;
-        let (a, rest) = p.on_return(r)?;
-        let (b, rest) = q.parse(rest)?;
-        Ok(((a, b), rest))
-    }
-}
-
-impl<S, P, Q> Parser<S> for Then<P, Q>
-where
-    S: Coro<(), char, (), Next = S>,
-    P: Parser<S>,
-    Q: Parser<S>,
-{
-    type Output = (P::Output, Q::Output);
-}
-
-#[derive(Clone)]
-struct Skip<P, Q>(P, Q);
-
-impl<S, P, Q> Cocoro<(), char, (), S> for Skip<P, Q>
-where
-    S: Coro<(), char, (), Next = S>,
-    P: Parser<S>,
-    Q: Parser<S>,
-{
-    type Out = PResult<P::Output, S>;
-
-    fn on_yield(self, ch: char, next: S) -> Self::Out {
-        let Self(p, q) = self;
-        let (a, rest) = p.on_yield(ch, next)?;
-        let (_, rest) = q.parse(rest)?;
-        Ok((a, rest))
-    }
-
-    fn on_return(self, r: ()) -> Self::Out {
-        let Self(p, q) = self;
-        let (a, rest) = p.on_return(r)?;
-        let (_, rest) = q.parse(rest)?;
-        Ok((a, rest))
-    }
-}
-
-impl<S, P, Q> Parser<S> for Skip<P, Q>
-where
-    S: Coro<(), char, (), Next = S>,
-    P: Parser<S>,
-    Q: Parser<S>,
-{
-    type Output = P::Output;
-}
-
-#[derive(Clone)]
-struct SkipLeft<P, Q>(P, Q);
-
-impl<S, P, Q> Cocoro<(), char, (), S> for SkipLeft<P, Q>
-where
-    S: Coro<(), char, (), Next = S>,
-    P: Parser<S>,
-    Q: Parser<S>,
-{
-    type Out = PResult<Q::Output, S>;
-
-    fn on_yield(self, ch: char, next: S) -> Self::Out {
-        let Self(p, q) = self;
-        let (_, rest) = p.on_yield(ch, next)?;
-        let (b, rest) = q.parse(rest)?;
-        Ok((b, rest))
-    }
-
-    fn on_return(self, r: ()) -> Self::Out {
-        let Self(p, q) = self;
-        let (_, rest) = p.on_return(r)?;
-        let (b, rest) = q.parse(rest)?;
-        Ok((b, rest))
-    }
-}
-
-impl<S, P, Q> Parser<S> for SkipLeft<P, Q>
-where
-    S: Coro<(), char, (), Next = S>,
-    P: Parser<S>,
-    Q: Parser<S>,
-{
-    type Output = Q::Output;
-}
 
 #[derive(Clone)]
 struct Or<P, Q>(P, Q);
@@ -428,77 +267,6 @@ where
     S: Coro<(), char, (), Next = S> + Clone,
     P: Parser<S>,
     Q: Parser<S, Output = P::Output>,
-{
-    type Output = P::Output;
-}
-
-#[derive(Clone)]
-struct Repeated<P>(P);
-
-impl<S, P> Cocoro<(), char, (), S> for Repeated<P>
-where
-    S: Coro<(), char, (), Next = S> + Clone,
-    P: Parser<S> + Clone,
-{
-    type Out = PResult<Vec<P::Output>, S>;
-
-    fn on_yield(self, ch: char, next: S) -> Self::Out {
-        let mut results = Vec::new();
-        let mut current: Input<S> = Yield(ch, next);
-        loop {
-            let saved = current.clone();
-            match self.0.clone().parse(current) {
-                Ok((item, rest)) => {
-                    results.push(item);
-                    current = rest;
-                }
-                Err(_) => {
-                    current = saved;
-                    break;
-                }
-            }
-        }
-        Ok((results, current))
-    }
-
-    fn on_return(self, _: ()) -> Self::Out {
-        Ok((Vec::new(), Return(())))
-    }
-}
-
-impl<S, P> Parser<S> for Repeated<P>
-where
-    S: Coro<(), char, (), Next = S> + Clone,
-    P: Parser<S> + Clone,
-{
-    type Output = Vec<P::Output>;
-}
-
-#[derive(Clone)]
-struct Padded<P>(P);
-
-impl<S, P> Cocoro<(), char, (), S> for Padded<P>
-where
-    S: Coro<(), char, (), Next = S>,
-    P: Parser<S>,
-{
-    type Out = PResult<P::Output, S>;
-
-    fn on_yield(self, ch: char, next: S) -> Self::Out {
-        let Self(p) = self;
-        p.parse(skip_ws(Yield(ch, next)))
-    }
-
-    fn on_return(self, _: ()) -> Self::Out {
-        let Self(p) = self;
-        p.parse(Return(()))
-    }
-}
-
-impl<S, P> Parser<S> for Padded<P>
-where
-    S: Coro<(), char, (), Next = S>,
-    P: Parser<S>,
 {
     type Output = P::Output;
 }
@@ -567,30 +335,6 @@ where
 // ============================================================================
 // Primitive parsers
 // ============================================================================
-
-/// Accepts one ASCII digit character, returning it.
-#[derive(Clone, Copy)]
-struct Digit;
-
-impl<S: Coro<(), char, (), Next = S>> Cocoro<(), char, (), S> for Digit {
-    type Out = PResult<char, S>;
-
-    fn on_yield(self, ch: char, next: S) -> PResult<char, S> {
-        if ch.is_ascii_digit() {
-            Ok((ch, advance(next)))
-        } else {
-            Err(ParseError::ExpectedDigit)
-        }
-    }
-
-    fn on_return(self, _: ()) -> PResult<char, S> {
-        Err(ParseError::UnexpectedEof)
-    }
-}
-
-impl<S: Coro<(), char, (), Next = S> + Clone> Parser<S> for Digit {
-    type Output = char;
-}
 
 /// Accepts one exact character.
 #[derive(Clone, Copy)]
