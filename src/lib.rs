@@ -130,7 +130,7 @@
 //! a function parameter or on an `impl Coro` return type from the function that
 //! the coroutine came from), the `Suspended` trait provides a `visit` method
 //! that can be converted to a `Suspend` enum to pattern-match against, or
-//! visited directly with a `SuspendedVisitor`.
+//! visited directly with a `Cocoro`.
 //!
 //! It's more common to use helper functions and combinators to create
 //! coroutines, rather than implement the `Coro` trait directly.
