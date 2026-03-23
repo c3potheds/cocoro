@@ -68,8 +68,8 @@ The `Yield` and `Return` variants are imported into the crate's root
 namespace, so they can be used without the `Suspend::` prefix.
 
 If not using the `Suspend` enum, however, the `Cocoro` trait abstracts over what
-otherwise might be written as a `match` expression. It implements the "visitor
-pattern", handling *either* `on_yield()` *or* `on_return()` and deciding what
+otherwise might be written as a `match` expression. It is a first-class
+eliminator, handling *either* `on_yield()` *or* `on_return()` and deciding what
 to do next based on which method was called. The `Out` parameter of the trait
 determines the return value of the final computation, which you can think of as
 the type that the `match` expression would evaluate to if using a `match` on the
@@ -320,9 +320,13 @@ coroutines. As another layer to the pun, "cocoro" sounds like "kokoro",
 which is the Japanese word for "heart", with all the attendant connotations
 of mind, spirit, and core-ness.
 
-The `Cocoro` trait is so named because it is dual to a `Coro`: what a `Coro`
-emits, a `Cocoro` consumes. This duality is key to the design of the crate,
-which I want to highlight in the naming.
+The `Cocoro` trait captures this meaning precisely: when the input type is
+`()`, `Coro<(), Y, R>` is an F-coalgebra for `F(X) = Y×X + R`, and
+`Cocoro<(), Y, R, N>` is the corresponding F-algebra — the genuine categorical
+dual. One can also entertain the concept of a "co-routine" as the dual of a
+"routine", and thus a co-coroutine as something... routine.
+
+But also the name happened to be free on crates.io.
 
 ## Why is the `resume()` method consuming `self`?
 

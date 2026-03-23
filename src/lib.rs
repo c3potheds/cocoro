@@ -8,7 +8,7 @@
 //! In this crate, the core coroutine trait looks like:
 //!
 //! ```rust
-//! pub trait SuspendedVisitor<I, Y, R, N>
+//! pub trait Cocoro<I, Y, R, N>
 //! where
 //!     N: Coro<I, Y, R>,
 //! {
@@ -21,7 +21,7 @@
 //!     type Next: Coro<I, Y, R>;
 //!     fn visit<X>(
 //!         self,
-//!         visitor: impl SuspendedVisitor<I, Y, R, Self::Next, Out = X>,
+//!         visitor: impl Cocoro<I, Y, R, Self::Next, Out = X>,
 //!     ) -> X;
 //! }
 //!
@@ -31,6 +31,16 @@
 //!     fn resume(self, input: I) -> Self::Suspend;
 //! }
 //! ```
+//!
+//! This divides up the full execution flow of a coroutine into these steps:
+//!
+//!   * A `Coro` is `resume()`'d and runs until it suspends.
+//!   * A `Cocoro` (the consumer of a `Coro`'s suspended state) decides what to
+//!     do next.
+//!
+//! The `Cocoro` can choose to "continue" the coroutine by calling the `Coro` it
+//! receives in `on_yield()`, or it can "return early" by returning a value with
+//! its `Out` type.
 //!
 //! Note the following differences from `std::ops::Coroutine`:
 //!
@@ -55,6 +65,14 @@
 //!
 //! The `Yield` and `Return` variants are imported into the crate's root
 //! namespace, so they can be used without the `Suspend::` prefix.
+//!
+//! If not using the `Suspend` enum, however, the `Cocoro` trait abstracts over
+//! what otherwise might be written as a `match` expression. It is a first-class
+//! eliminator, handling *either* `on_yield()` *or* `on_return()` and deciding
+//! what to do next based on which method was called. The `Out` parameter of the
+//! trait determines the return value of the final computation, which you can
+//! think of as the type that the `match` expression would evaluate to if using
+//! a `match` on the `Suspend` enum.
 //!
 //! In addition, the `Coro` trait provides a number of default combinators that
 //! should feel familiar to anyone working with `Iterator`, for example:
@@ -311,11 +329,11 @@
 //! "kokoro", which is the Japanese word for "heart", with all the attendant
 //! connotations of mind, spirit, and core-ness.
 //!
-//! I was also vaguely gesturing at the idea of co- as a prefix for mathematical
-//! duals, especially in the context of category theory. Although a coroutine is
-//! not the categorical dual of a routine in any strict sense, one can entertain
-//! the concept of a "co-routine" as the dual of a "routine", and thus a
-//! co-coroutine as something... routine.
+//! The `Cocoro` trait captures this meaning precisely: when the input type is
+//! `()`, `Coro<(), Y, R>` is an F-coalgebra for `F(X) = Y×X + R`, and
+//! `Cocoro<(), Y, R, N>` is the corresponding F-algebra — the genuine
+//! categorical dual. One can also entertain the concept of a "co-routine" as
+//! the dual of a "routine", and thus a co-coroutine as something... routine.
 //!
 //! But also the name happened to be free on crates.io.
 //!
@@ -476,9 +494,6 @@ mod zip;
 /// they are used so often. Do not confuse these enum variants with the
 /// `Yielded` and `Returned` structs.
 pub use Suspend::Return;
-/// `Yield` and `Return` are imported into the crate root namespace because
-/// they are used so often. Do not confuse these enum variants with the
-/// `Yielded` and `Returned` structs.
 pub use Suspend::Yield;
 pub use and_then::AndThen;
 pub use cocoro::Cocoro;
