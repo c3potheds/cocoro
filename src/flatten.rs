@@ -34,14 +34,10 @@ where
         use Suspend::Yield;
         use either::Left;
         use either::Right;
-
-        let Self { outer, .. } = self;
-
         struct OuterVisitor<I, Y, R, Inner> {
             input: I,
             _phantom: PhantomData<(Y, R, Inner)>,
         }
-
         impl<I, Y, R, Inner, Outer> Cocoro<I, Y, Inner, Outer>
             for OuterVisitor<I, Y, R, Inner>
         where
@@ -96,6 +92,7 @@ where
             }
         }
 
+        let Self { outer, .. } = self;
         outer.resume(input).visit(OuterVisitor {
             input,
             _phantom: PhantomData,

@@ -18,7 +18,8 @@ pub enum Suspend<Y, R, N> {
     Return(R),
 }
 
-use Suspend::*;
+use Suspend::Return;
+use Suspend::Yield;
 
 impl<Y, R, N> Suspend<Y, R, N> {
     /// Returns the yielded value and the next state of the coroutine, if the

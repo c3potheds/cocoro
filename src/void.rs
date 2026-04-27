@@ -52,6 +52,7 @@ impl Void {
     /// because the function cannot actually be called at runtime. In generic
     /// contexts where `Void` is substituted into an input parameter, it's safe
     /// to call `.absurd()` on the `Void` instance to satisfy the type checker.
+    #[must_use]
     pub fn absurd<R>(self) -> R {
         unreachable!()
     }

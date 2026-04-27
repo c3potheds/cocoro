@@ -25,7 +25,7 @@ pub struct IteratorCoro<I>(I);
 impl<T, I: Iterator<Item = T>> Coro<(), T, ()> for IteratorCoro<I> {
     type Next = Self;
     type Suspend = Suspend<T, (), Self>;
-    fn resume(self, _: ()) -> Self::Suspend {
+    fn resume(self, (): ()) -> Self::Suspend {
         let Self(mut iter) = self;
         match iter.next() {
             Some(x) => Yield(x, Self(iter)),

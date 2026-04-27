@@ -55,8 +55,10 @@ use crate::with_state;
 ///     .assert_yields((), 2)
 ///     .assert_returns((), Some("done"));
 /// ```
+#[must_use]
 pub fn take<T>(n: usize) -> impl FixedPointCoro<T, T, ()> {
-    use core::ops::ControlFlow::*;
+    use core::ops::ControlFlow::Break;
+    use core::ops::ControlFlow::Continue;
     with_state(
         n,
         from_control_flow(|(n, t): (usize, T)| {

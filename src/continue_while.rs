@@ -50,7 +50,8 @@ pub fn continue_while<T, F>(f: F) -> impl FixedPointCoro<T, T, T>
 where
     F: FnMut(&T) -> bool,
 {
-    use core::ops::ControlFlow::*;
+    use core::ops::ControlFlow::Break;
+    use core::ops::ControlFlow::Continue;
     with_state(
         f,
         from_control_flow(

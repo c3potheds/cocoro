@@ -45,7 +45,8 @@ where
     >;
     type Suspend = Suspend<X, R, Self::Next>;
     fn resume(self, a: A) -> Self::Suspend {
-        use Either::*;
+        use Either::Left;
+        use Either::Right;
         let Self {
             src,
             processor,

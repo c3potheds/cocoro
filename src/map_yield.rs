@@ -1,6 +1,7 @@
 use core::marker::PhantomData;
 
-use Suspend::*;
+use Suspend::Return;
+use Suspend::Yield;
 
 use crate::coro::Coro;
 use crate::suspend::Suspend;

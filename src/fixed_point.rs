@@ -45,6 +45,7 @@ pub unsafe trait FixedPointCoro<I, Y, R>:
     ///  error[E0599]: the method `fixed_point` exists for opaque type
     /// `impl Coro<I, Y, R>`, but its trait bounds were not satisfied
     /// ```
+    #[must_use]
     fn fixed_point(self) -> Self {
         self
     }
