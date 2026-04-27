@@ -36,8 +36,6 @@
 //! Parser-combinator values are invoked with `.parse(input)`; grammar
 //! functions call each other directly.
 
-// #![allow(dead_code)]
-
 use std::fmt;
 
 use cocoro::Cocoro;
@@ -204,14 +202,11 @@ where
     /// Backtracking is implemented by cloning `Input<S>` before trying the
     /// first branch, which is cheap when `S` is a `Chars` (it holds a
     /// `std::str::Chars` iterator, itself a slice view into the string).
-    fn or<Q: Parser<S, Output = Self::Output>>(
-        self,
-        other: Q,
-    ) -> impl Parser<S, Output = Self::Output> + Clone
+    fn or<Q>(self, other: Q) -> impl Parser<S, Output = Self::Output> + Clone
     where
+        Q: Parser<S, Output = Self::Output> + Clone,
         S: Clone,
         Self: Clone,
-        Q: Clone,
     {
         Or(self, other)
     }
@@ -246,7 +241,7 @@ where
 
     fn on_yield(self, ch: char, next: S) -> Self::Out {
         let Self(p, q) = self;
-        let saved = Yield(ch.clone(), next.clone());
+        let saved = Yield(ch, next.clone());
         match p.on_yield(ch, next) {
             Ok(result) => Ok(result),
             Err(_) => q.parse(saved),

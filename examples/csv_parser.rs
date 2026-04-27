@@ -166,10 +166,10 @@ Bob Johnson,35,Chicago
 
     // Filter and perform I/O in the consumer
     with_age_info.for_each(|(record, age_opt)| {
-        if let Some(age) = age_opt {
-            if age > 30 {
-                println!("  Over 30: {:?} (age: {})", record.fields, age);
-            }
+        if let Some(age) = age_opt
+            && age > 30
+        {
+            println!("  Over 30: {:?} (age: {})", record.fields, age);
         }
     });
     println!("  Finished filtering records\n");
