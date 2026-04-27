@@ -30,9 +30,9 @@ use crate::coro::Coro;
 /// - `Coro<(), Y, R>` is an **F-coalgebra** for `F(X) = Y×X + R`: given a
 ///   state, it produces either a yielded value plus a next state, or a final
 ///   return value.
-/// - `Cocoro<(), Y, R, N>` is an **F-algebra** for the same functor: given `Y×N
-///   + R` (encoded as either `on_yield(y, next)` or `on_return(r)`), it
-///   produces an output of type `Out`.
+/// - `Cocoro<(), Y, R, N>` is an **F-algebra** for the same functor: given the
+///   formula `Y×N + R` (encoded as either `on_yield(y, next)` or
+///   `on_return(r)`), it produces an output of type `Out`.
 ///
 /// This is the precise categorical sense in which `Cocoro` is the "co-"
 /// counterpart to `Coro`. With non-trivial input types (`I ≠ ()`), the duality

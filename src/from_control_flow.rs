@@ -1,8 +1,10 @@
 use core::marker::PhantomData;
 use core::ops::ControlFlow;
 
-use ControlFlow::*;
-use Suspend::*;
+use ControlFlow::Break;
+use ControlFlow::Continue;
+use Suspend::Return;
+use Suspend::Yield;
 
 use crate::coro::Coro;
 use crate::suspend::Suspend;

@@ -20,7 +20,8 @@ pub trait Suspended<I, Y, R>: Sized {
 
     fn into_enum(self) -> Suspend<Y, R, Self::Next> {
         self.visit({
-            use Suspend::*;
+            use Suspend::Return;
+            use Suspend::Yield;
             struct AsEnum;
             impl<I, Y, R, N> Cocoro<I, Y, R, N> for AsEnum
             where
