@@ -20,5 +20,9 @@ jobs:
       run: cargo build --verbose
     - name: Run tests
       run: cargo test --verbose
+    - name: Test examples
+      run: cargo test --examples
+    - name: Check examples with clippy
+      run: cargo clippy --examples
     - name: Check documentation
       run: RUSTDOCFLAGS="-D warnings" cargo doc --no-deps
