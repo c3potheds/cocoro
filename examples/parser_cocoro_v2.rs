@@ -185,51 +185,51 @@ where
     // combinators. They thread the leftover `Input<Tok, S>` that lives inside
     // `Out = PResult<..., S>`, which is opaque to `Cocoro`.
 
-    fn then<Q: Parser<Tok, S>>(
+    fn then<Q>(
         self,
         other: Q,
     ) -> impl Parser<Tok, S, Output = (Self::Output, Q::Output)> + Clone
     where
+        Q: Parser<Tok, S> + Clone,
         S: Coro<(), Tok, (), Next = S>,
         Self: Clone,
-        Q: Clone,
     {
         Then(self, other)
     }
 
-    fn skip<Q: Parser<Tok, S>>(
+    fn skip<Q>(
         self,
         other: Q,
     ) -> impl Parser<Tok, S, Output = Self::Output> + Clone
     where
+        Q: Parser<Tok, S> + Clone,
         S: Coro<(), Tok, (), Next = S>,
         Self: Clone,
-        Q: Clone,
     {
         Skip(self, other)
     }
 
-    fn skip_left<Q: Parser<Tok, S>>(
+    fn skip_left<Q>(
         self,
         other: Q,
     ) -> impl Parser<Tok, S, Output = Q::Output> + Clone
     where
+        Q: Parser<Tok, S> + Clone,
         S: Coro<(), Tok, (), Next = S>,
         Self: Clone,
-        Q: Clone,
     {
         SkipLeft(self, other)
     }
 
-    fn or<Q: Parser<Tok, S, Output = Self::Output>>(
+    fn or<Q>(
         self,
         other: Q,
     ) -> impl Parser<Tok, S, Output = Self::Output> + Clone
     where
+        Q: Parser<Tok, S, Output = Self::Output> + Clone,
         Tok: Clone,
         S: Coro<(), Tok, (), Next = S> + Clone,
         Self: Clone,
-        Q: Clone,
     {
         Or(self, other)
     }
@@ -872,9 +872,8 @@ where
 fn parse(input: &str) -> Result<Vec<Pattern>, ParseError> {
     let stream = Chars(input.chars());
     let input = skip_ws(stream.resume(()));
-    match input {
-        Return(()) => return Ok(vec![]),
-        _ => {}
+    if let Return(()) = input {
+        return Ok(vec![]);
     }
     let (result, rest) = patterns_p().parse(input)?;
     match skip_ws(rest) {

@@ -286,9 +286,8 @@ fn parse(input: &str) -> Result<Vec<Pattern>, ParseError> {
     let stream = Chars(input.chars());
     let input = skip_ws(stream.resume(()));
     // Allow empty input
-    match input {
-        Return(()) => return Ok(vec![]),
-        _ => {}
+    if let Return(()) = input {
+        return Ok(vec![]);
     }
     let (result, rest) = patterns(input)?;
     match skip_ws(rest) {

@@ -522,9 +522,8 @@ fn patterns_p() -> impl Parser<char, Output = Vec<Pattern>> + Clone {
 fn parse(input: &str) -> Result<Vec<Pattern>, ParseError> {
     let stream = Chars(input.chars());
     let input = skip_ws(stream.resume(()));
-    match input {
-        Return(()) => return Ok(vec![]),
-        _ => {}
+    if let Return(()) = input {
+        return Ok(vec![]);
     }
     let parser = patterns_p();
     let (result, rest) = parser.parse(input)?;
