@@ -58,6 +58,7 @@ pub enum ParseError {
     ExpectedIdent,
     UnexpectedKeyword,
     Expected(&'static str),
+    NumberOutOfRange,
 }
 
 impl fmt::Display for ParseError {
@@ -69,6 +70,7 @@ impl fmt::Display for ParseError {
             Self::ExpectedIdent => write!(f, "expected an identifier"),
             Self::UnexpectedKeyword => write!(f, "unexpected keyword"),
             Self::Expected(s) => write!(f, "expected {s:?}"),
+            Self::NumberOutOfRange => write!(f, "number literal out of range"),
         }
     }
 }
@@ -189,7 +191,6 @@ where
     fn map_output<B, F>(self, f: F) -> impl Parser<S, Output = B> + Clone
     where
         F: Fn(Self::Output) -> B + Clone,
-        S: Clone,
         Self: Clone,
     {
         Cocoro::map(self, move |r: PResult<Self::Output, S>| {
@@ -360,7 +361,7 @@ impl<S: Coro<(), char, (), Next = S> + Clone> Parser<S> for Just {
 /// alphanumeric character or underscore.
 ///
 /// This boundary check prevents "letx" from being parsed as the keyword
-/// "let" followed by some other token. Without it, `Token("let")` would
+/// "let" followed by some other token. Without it, `Keyword("let")` would
 /// match the first three characters of "letx", and the parser would try
 /// to interpret "x" as the start of the binding name — failing only later,
 /// which wastes work and can produce confusing errors.
@@ -429,13 +430,17 @@ where
             if !ch.is_ascii_digit() {
                 return Err(ParseError::ExpectedDigit);
             }
-            let init = ch as i64 - '0' as i64;
-            let (n, rest) = next.resume(()).into_enum().visit(take_while_fold(
-                init,
-                char::is_ascii_digit,
-                |acc, c| acc * 10 + (c as i64 - '0' as i64),
-            ));
-            Ok((n, rest))
+            let init: Result<i64, ParseError> = Ok(ch as i64 - '0' as i64);
+            let (result, rest) = next.resume(()).into_enum().visit(
+                take_while_fold(init, char::is_ascii_digit, |acc, c| {
+                    acc.and_then(|n| {
+                        n.checked_mul(10)
+                            .and_then(|n| n.checked_add(c as i64 - '0' as i64))
+                            .ok_or(ParseError::NumberOutOfRange)
+                    })
+                }),
+            );
+            Ok((result?, rest))
         }
 
         fn on_return(self, _: ()) -> PResult<i64, S> {
